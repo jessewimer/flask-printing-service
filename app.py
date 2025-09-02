@@ -8,6 +8,7 @@ from win32con import FW_NORMAL, FW_BOLD, DEFAULT_CHARSET
 from PIL import Image, ImageWin
 import os
 
+# Test comment
 app = Flask(__name__)
 CORS(app) 
 
