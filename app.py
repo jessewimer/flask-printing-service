@@ -55,7 +55,7 @@ def print_germ_label():
         else: 
 
             # === Construct label text ===
-            variety = data.get('variety')
+            variety = data.get('variety_name')
             sku_prefix = data.get('sku_prefix')
             species = data.get('species')
             lot_code = data.get('lot_code')
