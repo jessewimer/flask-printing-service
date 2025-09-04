@@ -148,7 +148,6 @@ def print_single_front_label():
         quantity = int(data.get('quantity', 1))  # default to 1 if not provided
 
         if CURRENT_USER.lower() == "ndefe":
-            # for i in range(quantity):
             print(f"Printing copy {quantity} single front labels on Ndefe's printer")
             print(f"Variety Name: {data.get('variety_name')}")
             print(f"Crop: {data.get('crop')}")
@@ -190,6 +189,8 @@ def print_single_front_label():
 
             pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germination}%"
             sku_suffix = data.get('sku_suffix')
+
+            # print logic continues... 
 
             # Fonts (reusable)
             bold_12 = create_font("Times New Roman", 48, bold=True)
@@ -348,6 +349,7 @@ def print_single_back_label():
             print(f"Back5 {data.get('back5')}")
             print(f"Back6 {data.get('back6')}")
             print(f"Back7 {data.get('back7')}")
+        # Print logic continues...
 
         else:
             back_lines = [
@@ -419,13 +421,30 @@ def print_single_back_label():
     
 
 
-@app.route('/print-front-sheet', methods=['POST'])
-def print_front_sheet():
+@app.route('/print-sheet-front', methods=['POST'])
+def print_sheet_front():
+    print("Front Sheet Print Job Started")
     try:
         data = request.json
         quantity = int(data.get('quantity', 1))
         if CURRENT_USER == "ndefe":
             print(f"Printing {quantity} front sheet on Ndefe's printer")
+            print(f"Printing copy {quantity} single front labels on Ndefe's printer")
+            print(f"Variety Name: {data.get('variety_name')}")
+            print(f"Crop: {data.get('crop')}")
+            print(f"Days: {data.get('days')}")
+            print(f"SKU Suffix: {data.get('sku_suffix')}")
+            print(f"Pkg. size: {data.get('pkg_size')}")
+            print(f"Env type: {data.get('env_type')}")
+            print(f"Lot Code: {data.get('lot_code')}")
+            print(f"Germination: {data.get('germination')}")
+            print(f"For Year: {data.get('for_year')}")
+            print(f"Quantity: {data.get('quantity')}")
+            print(f"Desc1: {data.get('desc1')}")
+            print(f"Desc2: {data.get('desc2')}")
+            print(f"Desc3: {data.get('desc3')}")
+            print(f"Rad type: {data.get('rad_type')}")
+            print("================================")
 
         else:
 
@@ -442,6 +461,7 @@ def print_front_sheet():
             desc_line3 = data.get('desc3')
             lot_code = data.get('lot_code')
             germination = data.get('germination')
+            germ = germination.split("%")[0].strip()
             # rad_type = data.get('rad_type')
 
             if env_type == "LG Coffee":
@@ -451,7 +471,7 @@ def print_front_sheet():
             else:
                 pkg_size = data.get('pkg_size')
 
-            pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germination}%"
+            pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germ}%"
             sku_suffix = data.get('sku_suffix')
 
 
@@ -543,9 +563,8 @@ def print_front_sheet():
             variety_name = f"'{variety_name}'"
             variety_crop = variety_crop.upper()
 
-            # year = f"20{germ.year}"
-            pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germination}%"
-            days_year = f"Days: {days}    Packed for {for_year}"
+            # pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germ}%"
+            days_year = f"{days}    Packed for {for_year}"
 
             # Calculate the position for the envelope
             envelope_x = 40  # Adjust to position the envelope to the left
@@ -589,7 +608,12 @@ def print_front_sheet():
                 # Clean up the file
                 if os.path.exists(filename):
                     os.remove(filename)
-                                        
+
+        return jsonify({
+            'success': True,
+            'message': f'Back Single Label printed successfully ({quantity} copies)'
+        })   
+                                 
     except Exception as e:
         print(f"Error printing back label: {str(e)}")
         return jsonify({
@@ -598,6 +622,133 @@ def print_front_sheet():
         }), 500
     
 
+
+
+@app.route('/print-sheet-back', methods=['POST'])
+def print_sheet_back():
+
+    try:
+        data = request.get_json()
+        quantity = int(data.get('quantity', 1))
+        variety_name = f"'{data.get('variety_name')}'"
+
+        if CURRENT_USER == "ndefe":
+            print(f"Printing {quantity} back single labels for {variety_name} on Ndefe's printer")
+            print(f"Back1 {data.get('back1')}")
+            print(f"Back2 {data.get('back2')}")
+            print(f"Back3 {data.get('back3')}")
+            print(f"Back4 {data.get('back4')}")
+            print(f"Back5 {data.get('back5')}")
+            print(f"Back6 {data.get('back6')}")
+            print(f"Back7 {data.get('back7')}")
+
+        else:
+            back_lines = [
+                data.get('back1'),
+                data.get('back2'),
+                data.get('back3'),
+                data.get('back4'),
+                data.get('back5'),
+                data.get('back6'),
+                data.get('back7')
+            ]
+
+            # Remove empty lines (None or "")
+            back_lines = [line for line in back_lines if line]
+
+            if not back_lines:
+                return jsonify({
+                    'success': False,
+                    'message': 'No back lines provided'
+                }), 400
+
+
+
+            # File name
+            filename = f"{variety_name}_Back_Labels.pdf"
+            full_path = os.path.abspath(filename)
+            c = canvas.Canvas(filename, pagesize=LETTER)
+            
+            # Label sheet dimensions
+            page_width, page_height = LETTER
+            margin_y = 35  # Vertical margin, slightly adjusted
+            label_width = page_width / 3  # Divide the page into 3 columns
+            label_height = (page_height - margin_y) / 10.5  # Divide the page into 10 rows
+
+            # Column adjustments
+            left_col_offset = 5  # Move the left column slightly left
+            middle_col_offset = 0  # Keep the middle column centered
+            right_col_offset = -5   # Move the right column slightly right
+            col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+
+            # Top row adjustment
+            row_offset = -1  # Move rows slightly down
+
+            back1 = back_lines[0]
+            back2 = back_lines[1] 
+            back3 = back_lines[2] 
+            back4 = back_lines[3] 
+            back5 = back_lines[4] 
+            back6 = back_lines[5] 
+            back7 = back_lines[6] if len(back_lines) > 6 else None
+
+            # Draw labels (3 columns x 10 rows)
+            c.setFont("Book Antiqua", 8)
+            for row in range(10):
+                y = page_height - margin_y - (row * label_height) + row_offset
+                for col in range(3):
+                    x = (col * label_width) + (label_width / 2) + col_offsets[col]
+
+                    if back7 == None:
+                        c.drawCentredString(x, y - 15, back1)
+                        c.drawCentredString(x, y - 25, back2)
+                        c.drawCentredString(x, y - 35, back3)
+                        c.drawCentredString(x, y - 45, back4)
+                        c.drawCentredString(x, y - 55, back5)
+                        c.drawCentredString(x, y - 65, back6)
+                    else:    
+                        c.drawCentredString(x, y - 10, back1)
+                        c.drawCentredString(x, y - 20, back2)
+                        c.drawCentredString(x, y - 30, back3)
+                        c.drawCentredString(x, y - 40, back4)
+                        c.drawCentredString(x, y - 50, back5)
+                        c.drawCentredString(x, y - 60, back6)
+                        c.drawCentredString(x, y - 70, back7)
+
+            # Footer: Variety name at bottom margin
+            c.setFont("Calibri", 10)
+            footer_text = f"Variety: {variety_name}"
+            c.drawString(40, 15, footer_text)
+
+            c.save() 
+
+            # Handle printing
+            if CURRENT_USER.lower() != "ndefe":
+                try:
+                    for _ in range(quantity):
+                        command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{full_path}"'
+                        subprocess.run(command, check=True, shell=True)
+
+                except Exception as e:
+                    print(f"Failed to print: {e}")
+                finally:
+                    # Clean up the file
+                    pass
+                    if os.path.exists(filename):
+                        os.remove(filename)
+                        print(f"Temporary file {filename} deleted.")
+        return jsonify({
+            'success': True,
+            'message': f'Back Single Label printed successfully ({quantity} copies)'
+        }) 
+    
+    except Exception as e:
+        print(f"Error printing back label: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
 
 
 if __name__ == "__main__":
