@@ -16,6 +16,10 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle
 import subprocess
 
+pdfmetrics.registerFont(TTFont('Calibri', 'C:/Windows/Fonts/calibri.ttf')) 
+pdfmetrics.registerFont(TTFont("Calibri-Bold", 'C:/Windows/Fonts/calibrib.ttf'))
+pdfmetrics.registerFont(TTFont("Calibri-Italic", 'C:/Windows/Fonts/calibrii.ttf'))
+pdfmetrics.registerFont(TTFont("Book Antiqua", r"C:\Windows\Fonts\ANTQUAI.TTF"))
 
 app = Flask(__name__)
 CORS(app) 
