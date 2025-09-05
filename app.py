@@ -15,11 +15,26 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle
 import subprocess
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+import textwrap
+from datetime import datetime
+import math
 
 pdfmetrics.registerFont(TTFont('Calibri', 'C:/Windows/Fonts/calibri.ttf')) 
 pdfmetrics.registerFont(TTFont("Calibri-Bold", 'C:/Windows/Fonts/calibrib.ttf'))
 pdfmetrics.registerFont(TTFont("Calibri-Italic", 'C:/Windows/Fonts/calibrii.ttf'))
 pdfmetrics.registerFont(TTFont("Book Antiqua", r"C:\Windows\Fonts\ANTQUAI.TTF"))
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOGO_PATH = os.path.join(BASE_DIR, "assets", "uprising_logo.png")
+
+# Page limits for packing slips
+FIRST_PAGE_LIMIT = 27       # max rows (incl. blanks) on page 1
+OTHER_PAGE_LIMIT = 40       # max rows (incl. blanks) on subsequent pages
+
+
 
 app = Flask(__name__)
 CORS(app) 
@@ -33,12 +48,6 @@ SUMATRA_PATH = r"C:\Users\seedy\AppData\Local\SumatraPDF\SumatraPDF.exe"
 # @app.route("/")
 # def home():
 #     return "Flask is running locally!"
-
-# @app.route("/print-test")
-# def print_test():
-#     print("✅ Print request received!")  # This will show up in your terminal
-#     return "Check your terminal — message was printed!"
-
 
 def create_font(name, size, bold=False, italic=False):
     weight = FW_BOLD if bold else FW_NORMAL
@@ -753,6 +762,521 @@ def print_sheet_back():
             'error': str(e)
         }), 500
     
+
+
+@app.route('/print-orders', methods=['POST'])
+def print_orders():
+    try:
+        data = request.get_json()
+        customer_orders = data.get('customer_orders')
+        missing_orders = data.get('missing_orders')
+        bulk_orders = data.get('bulk_orders')
+        misc_orders = data.get('misc_orders')
+        order_data = data.get('order_data')
+
+
+        # print(f"Customer Orders: {customer_orders}")
+        # print(f"Missing Orders: {missing_orders}")
+        # print(f"Bulk Orders: {bulk_orders}")
+        # print(f"Misc Orders: {misc_orders}")
+        # print(f"Order Data: {order_data}")
+        # look through customer_orders dict and extract those with duplicate orders
+        duplicate_orders = {customer: orders for customer, orders in customer_orders.items() if len(orders) > 1}
+        # print(f"Duplicate Orders: {duplicate_orders}")
+
+        # Handle printing of duplicate orders
+        handled_orders = set()
+
+        for customer, orders in duplicate_orders.items():
+            for order_number in orders:
+                if order_number in order_data:
+                    order = order_data[order_number]
+                    print(f"Printing duplicate order {order_number} for customer {customer}")
+                    generate_pdf(order_number, order, action="print")
+                    handled_orders.add(order_number)
+
+        # Now remove them in one go
+        for order_number in handled_orders:
+            order_data.pop(order_number, None)  # safe remove
+
+        # Handle printing of packet-only orders
+        pkt_only_orders = [
+            order_number for order_number, order in order_data.items()
+            if not order.get("bulk_items") and not order.get("misc_items")
+        ]
+
+        for order_number in pkt_only_orders:
+            order = order_data[order_number]
+            print(f"Printing packet-only order {order_number}")
+            generate_pdf(order_number, order, action="print")
+
+        # Remove them afterward
+        for order_number in pkt_only_orders:
+            order_data.pop(order_number, None) 
+
+
+        # Print remaining orders
+        for order_number, order in order_data.items():
+            print(f"Printing bulk/misc order {order_number}")
+            generate_pdf(order_number, order, action="print")
+
+
+        return jsonify({
+            'success': True,
+            'message': f'Orders printed successfully',
+            'duplicate_orders': duplicate_orders
+        })
+
+    except Exception as e:
+        print(f"Error printing orders: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+# GENERATES PACKING SLIPS
+def generate_pdf(order_number, order, action):
+    # from process_orders import separate_pkts_and_bulk, sort_lineitems
+    filename = f"{order_number}.pdf"
+    file_path = f"pdfs/{filename}"    
+
+    sorted_misc_list = order.get("misc_items", [])
+    sorted_bulk_list = order.get("bulk_items", [])
+    sorted_pkt_list  = order.get("pkt_items", [])
+
+    customer_name = order.get('customer_name')
+    address = order.get('address')
+    address2 = order.get('address2') or ""
+    postal_code = order.get('postal_code')
+    city = order.get('city')
+    state = order.get('state')
+    country = order.get('country')
+    note = order.get('note') or ""
+    shipping = order.get('shipping', 0)
+    tax = order.get('tax', 0)
+    subtotal = order.get('subtotal', 0)
+    total = order.get('total', 0)
+   
+    order_date = order.get('date')
+    order_dt = datetime.fromisoformat(order_date)
+    order_date = order_dt.strftime("%m/%d/%Y")
+
+    # print(f"Sorted Misc: {sorted_misc_list}")
+    # print(f"Sorted Bulk: {sorted_bulk_list}")
+    # print(f"Sorted Packet: {sorted_pkt_list}")
+    # print(f"Length of sorted packet items: {len(sorted_pkt_list)}")
+    # print(f"Length of sorted bulk items: {len(sorted_bulk_list)}")
+    # print(f"Length of sorted misc items: {len(sorted_misc_list)}")
+
+    # packet only
+    if not sorted_bulk_list and not sorted_misc_list:
+        num_items = len(sorted_pkt_list)
+    # misc only
+    elif not sorted_pkt_list and not sorted_bulk_list:
+        num_items = len(sorted_misc_list)
+    # bulk only
+    elif not sorted_pkt_list and not sorted_misc_list:
+        num_items = len(sorted_bulk_list)
+    # packets and bulk
+    elif not sorted_misc_list:
+        num_items = len(sorted_pkt_list) + len(sorted_bulk_list) + 1
+    # packets and misc
+    elif not sorted_bulk_list:
+        num_items = len(sorted_pkt_list) + len(sorted_misc_list) + 1
+    # bulk and misc
+    elif not sorted_pkt_list:
+        num_items = len(sorted_bulk_list) + len(sorted_misc_list) + 1   
+    # packets, bulk, and misc
+    elif sorted_pkt_list and sorted_bulk_list and sorted_misc_list:
+        num_items = len(sorted_pkt_list) + len(sorted_bulk_list) + len(sorted_misc_list) + 2
+    
+    if num_items <= 27:
+        num_pages = 1
+    elif num_items <=  70:
+        num_pages = 2
+    elif num_items <=  113:  
+        num_pages = 3
+    elif num_items <=  156:
+        num_pages = 4
+    elif num_items <=  199:
+        num_pages = 5
+    else:
+         num_pages = 6
+    
+    c = canvas.Canvas(file_path, pagesize=LETTER)
+    width, height = LETTER
+
+    # Add logo
+    logo_width = 100
+    logo_height = 50
+    # Position in the upper-right corner
+    logo_x = width - logo_width - 40  # 50 px from the right margin
+    logo_y = height - logo_height - 35  # 30 px from the top margin
+    # Draw the image
+    c.drawImage(LOGO_PATH, logo_x, logo_y, width=logo_width, height=logo_height, mask='auto')
+    # end logo
+
+    c.setFont("Calibri-Bold", 10)
+    c.drawString(460, height - 100, f"100% USDA Certified Organic")
+    
+    c.setFont("Calibri", 12)
+
+    def draw_header(c, page_num):
+        # Last 3 digits of order number
+        last_digits = order_number[-3:]
+        # Customer last name in uppercase
+        try:
+            last_name = customer_name.split()[-1].upper()
+        except:
+            last_name = customer_name.upper()
+        # Total pages
+        page_info = f"PAGE {page_num} OF {num_pages}"
+
+        # Set font
+        c.setFont("Calibri", 14)
+
+        # Define positions for each section (adjust as needed)
+        left_x = 30  # Left-aligned position
+        center_x = width / 2  # Center of the page
+        right_x = width - 100  # Right-aligned position
+    
+        # Draw each section separately
+        c.drawString(left_x, height - 25, f"{last_name} - {last_digits}")  # Left
+        c.drawCentredString(center_x, height - 25, "PACKING SLIP")  # Centered
+        c.drawString(right_x, height - 25, page_info) 
+        c.line(0, height - 30, width - 0, height - 30)
+
+    draw_header(c, 1)
+
+    c.setFont("Calibri", 10)
+
+    # Draw the note if it exists
+    if note:
+        note = f"Note: {note}"
+        # text wrap
+        wrapped_note = textwrap.wrap(note, width=55)
+        y = height - 120  # Starting y-position
+        i = 0
+        for line in wrapped_note:
+            if i <= 4:
+                c.drawString(335, y, line)
+                y -= 14
+            i += 1 
+        print(f"order number {order_number} has a note")
+
+    c.setFont("Calibri-Bold", 14)
+    c.drawString(50, height - 60, "Uprising Seeds")
+    c.setFont("Calibri", 12)
+    c.drawString(50, height - 75, "1501 Fraser St")
+    c.drawString(50, height - 90, "Suite 105")
+    c.drawString(50, height - 105, "Bellingham, WA 98229")
+    c.drawString(50, height - 120, "360-778-3749")
+    c.drawString(50, height - 135, "info@uprisingorganics.com")
+    
+    # # if canadian order in italics
+    if country == "CA":
+        def draw_centered_text(c, text, x, y, font="Calibri-Italic", font_size=10):
+            c.setFont(font, font_size)
+            text_width = c.stringWidth(text, font, font_size)
+            centered_x = x - (text_width / 2)  # Center the text based on the X coordinate
+            c.drawString(centered_x, y, text)
+
+        # c.setFont("Calibri-Italic", 12)
+        y = height - 54  # Starting Y position
+        draw_centered_text(c, "Certified in compliance with", 310, y)
+        y -= 15  # Adjust Y position for the next line
+        draw_centered_text(c, "the terms of the US-Canada", 310, y)
+        y -= 15
+        draw_centered_text(c, "Organic Equivalency Arrangement", 310, y)
+
+    c.line(50, height - 150, width - 300, height - 150)
+    c.setFont("Calibri-Bold", 12)
+    c.drawString(60, height - 164, "SHIP TO:")
+    
+    c.line(50, height - 150, 50, height - 280)
+    c.line(width - 300, height - 150, width - 300, height - 280)
+
+    c.line(50, height - 170, width - 300, height - 170)
+    
+    c.setFont("Calibri", 12)
+
+    # Function to right-align text at x = 120
+    def draw_right_aligned(c, text, y):
+        text_width = c.stringWidth(text, 'Calibri', 12)
+        c.drawString(130 - text_width, y, text)
+
+    # Customer info
+    draw_right_aligned(c, "Order #:", height - 185)
+    draw_right_aligned(c, "Name:", height - 200)
+    draw_right_aligned(c, "Date:", height - 215)
+    c.drawString(140, height - 215, order_date)  
+    draw_right_aligned(c, "Address:", height - 230)
+    c.drawString(140, height - 230, address)
+
+    if address2:
+        draw_right_aligned(c, "Address 2:", height - 245)
+        c.drawString(140, height - 245, address2)
+        draw_right_aligned(c, "City/State/Zip:", height - 260)
+        c.drawString(140, height - 260, f"{city}, {state}   {postal_code}")
+        draw_right_aligned(c, "Country:", height - 275)
+        c.drawString(140, height - 275, country)
+    else:
+        draw_right_aligned(c, "City/State/Zip:", height - 245)
+        c.drawString(140, height - 245, f"{city}, {state}   {postal_code}")
+        draw_right_aligned(c, "Country:", height - 260)
+        c.drawString(140, height - 260, country)
+
+    # Draw customer info
+    c.setFont("Calibri-Bold", 12)
+    c.drawString(140, height - 185, order_number)
+    c.drawString(140, height - 200, customer_name)
+
+    # c.drawString(140, height - 215, order.order_number)
+    c.line(50, height - 280, width - 300, height - 280)
+
+    # Define column X positions
+    qty_x = 65  # Centered quantity
+    product_x = 90  # Left-aligned description
+    price_x = 450  # Price column
+    ext_price_x = 550  # Extended price column
+
+    # Draw header lines
+    c.line(0, height - 290, width, height - 290)  # Top header line
+
+    # Draw column headers
+    c.drawCentredString(qty_x, height - 305, "QTY")  # Centered over quantity
+    c.drawString(product_x, height - 305, "Description")  # Left-aligned for product
+    c.drawRightString(price_x, height - 305, "Price")  # Right-aligned price
+    c.drawRightString(555, height - 305, "Ext. Price")  # Right-aligned extended price
+
+    # Bottom header line
+    c.line(0, height - 310, width, height - 310)  
+
+    # Ensure shipping, tax, and total are treated as floats
+    def format_currency(value):
+        try:
+            return f"${float(value):.2f}" 
+        except ValueError:
+            return "$0.00"
+
+    # Calculate right-aligned positions for Shipping, Tax, Total
+    right_x = 550 # Starting point for the right-aligned numbers (near the right edge)
+    label_x = 435 
+    # Function to draw right-aligned numbers
+    def draw_right_aligned_label_value(label, value, y_position):
+        c.drawString(label_x, y_position, label)
+        value_str = format_currency(value)  # Format the value as currency
+        value_width = c.stringWidth(value_str, "Calibri", 12)
+        c.drawString(right_x - value_width, y_position, value_str)
+
+    c.setFont("Calibri", 12)
+    # Draw Shipping, Tax, and Total right-aligned
+    draw_right_aligned_label_value("Shipping:", shipping, height - 225)
+    draw_right_aligned_label_value("Tax:", tax, height - 240)
+    draw_right_aligned_label_value("Subtotal:", subtotal, height - 255)
+    c.setFont("Calibri-Bold", 12)
+    draw_right_aligned_label_value("Total:", total, height - 270)
+
+    # box in the order summary
+    c.drawString(452, height - 205, "Order Summary")
+    c.line(428, height - 190, 428, height - 278)
+    c.line(558, height - 190, 558, height - 278)
+    c.line(428, height - 190, 558, height - 190)
+    c.line(428, height - 210, 558, height - 210)
+    c.line(428, height - 278, 558, height - 278)
+   
+    def draw_lineitem(c, lineitem, lineitem_height, counter):
+
+        qty = str(lineitem['qty'])  # Convert qty to string for centering
+        lineitem_name = lineitem['lineitem']
+        price = lineitem['price']
+
+        ext_price = f"${float(qty) * float(price):.2f}"
+
+        qty_x = 65  # Centered quantity
+        product_x = 90  # Left-aligned description
+        price_x = 450  # Price column
+        ext_price_x = 550  # Extended price column
+
+        line_y = height - lineitem_height
+
+        # Highlight qty background in gray if qty > 1
+        if int(qty) > 1:
+            c.setFillGray(0.9)  # Light gray fill
+            c.setStrokeColorRGB(0.9, 0.9, 0.9)  # Match stroke to fill
+            c.rect(55, line_y - 4, 20, 17, fill=1, stroke=0)  # stroke=0 removes border
+            c.setFillColorRGB(0, 0, 0)  # Reset text color
+            c.setStrokeColorRGB(0, 0, 0)  
+
+        # Draw line item data
+        c.drawString(30, line_y, "___")
+        c.drawCentredString(qty_x, line_y, qty)  # Center qty
+        c.drawString(product_x, line_y, lineitem_name)  # Left-align description
+        c.drawRightString(price_x, line_y, price)  # Right-align price from OOIncludes
+        c.drawRightString(ext_price_x, line_y, ext_price)  # Right-align extended price
+
+        # Move to next line
+        lineitem_height += 17
+        counter += 1
+        return lineitem_height, counter
+
+
+    # def draw_misc_items(c, sorted_misc, lineitem_height, counter):
+    def draw_lineitems(c, item_list, lineitem_height, counter):
+        if counter != 1:
+            lineitem_height += 17  # extra space between sections
+        # print(f"New draw_lineitems: {item_list}")
+        for lineitem in item_list:
+            if counter < 28:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter == 28:
+                c.showPage()
+                draw_header(c, 2)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter < 71:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter == 71:
+                c.showPage()
+                draw_header(c, 3)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter < 114:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+            elif counter == 114:
+                c.showPage()
+                draw_header(c, 4)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+            elif counter < 157:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter == 157:
+                c.showPage()
+                draw_header(c, 5)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+            elif counter < 200:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter == 200:
+                c.showPage()
+                draw_header(c, 6)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+            elif counter == 200:
+                c.showPage()
+                draw_header(c, 6)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter < 243:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter == 243:
+                c.showPage()
+                draw_header(c, 7)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+            elif counter < 285:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter == 285:
+                c.showPage()
+                draw_header(c, 8)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter == 285:
+                c.showPage()
+                draw_header(c, 8)
+
+                c.setFont("Calibri", 11)
+                lineitem_height = 47
+
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+            elif counter < 285:
+                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+        return lineitem_height, counter
+    
+    # make font smaller and not bold
+    c.setFont("Calibri", 11)
+    lineitem_height = 325
+    counter = 1
+
+    if len(sorted_pkt_list) > 0:
+        # packet only
+        if len(sorted_bulk_list) < 1 and len(sorted_misc_list) < 1:
+            lineitem_height, counter = draw_lineitems(c, sorted_pkt_list, lineitem_height, counter)
+        # packets and bulk
+        elif len(sorted_bulk_list) > 0 and len(sorted_misc_list) < 1:
+            lineitem_height, counter = draw_lineitems(c, sorted_bulk_list, lineitem_height, counter)
+            lineitem_height, counter = draw_lineitems(c, sorted_pkt_list, lineitem_height, counter)
+        # packets and misc
+        elif len(sorted_bulk_list) < 1 and len(sorted_misc_list) > 0:
+            lineitem_height, counter = draw_lineitems(c, sorted_misc_list, lineitem_height, counter)
+            lineitem_height, counter = draw_lineitems(c, sorted_bulk_list, lineitem_height, counter)
+        # pkts, bulks, and misc
+        elif len(sorted_bulk_list) > 0 and len(sorted_misc_list) > 0:
+            lineitem_height, counter = draw_lineitems(c, sorted_misc_list, lineitem_height, counter) 
+            lineitem_height, counter = draw_lineitems(c, sorted_bulk_list, lineitem_height, counter)
+            lineitem_height, counter = draw_lineitems(c, sorted_pkt_list, lineitem_height, counter)
+
+    elif len(sorted_bulk_list) > 0:
+        if len(sorted_misc_list) < 1:
+            lineitem_height, counter = draw_lineitems(c, sorted_bulk_list, lineitem_height, counter)
+        else:
+            lineitem_height, counter = draw_lineitems(c, sorted_misc_list, lineitem_height, counter)
+            lineitem_height, counter = draw_lineitems(c, sorted_bulk_list, lineitem_height, counter)
+    elif len(sorted_misc_list) > 0:
+        lineitem_height, counter = draw_lineitems(c, sorted_misc_list, lineitem_height, counter)
+
+    c.save()
+    
+    if action == "print":
+        if CURRENT_USER.lower() != "ndefe":
+            try:
+                command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{file_path}"'
+                subprocess.run(command, check=True, shell=True)
+
+            except Exception as e:
+                print(f"Failed to print: {e}")
+            finally:
+                # Clean up the file
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Temporary file {file_path} deleted.")
+
+    elif action == "view":
+        file_path = os.path.abspath(f"pdfs/{order.order_number}.pdf")
+        os.startfile(file_path)
+    return
 
 
 if __name__ == "__main__":

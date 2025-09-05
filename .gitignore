@@ -10,3 +10,6 @@ instance/
 
 # Environment variables
 .env
+
+# PDF files
+pdfs/
