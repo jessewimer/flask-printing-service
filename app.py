@@ -10,12 +10,12 @@ import os
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Table, TableStyle
+from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer
 import subprocess
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 import textwrap
@@ -162,6 +162,9 @@ def print_single_front_label_logic(data):
     """Extract the core front label printing logic"""
     try:
         quantity = int(data.get('quantity', 1))
+        env_multiplier = int(data.get('env_multiplier', 1))
+        print(f"Environmental Multiplier: {env_multiplier}")
+        quantity *= env_multiplier
 
         if CURRENT_USER.lower() == "ndefe":
             print(f"Printing copy {quantity} single front labels on Ndefe's printer")
@@ -346,6 +349,8 @@ def print_single_back_label_logic(data):
     """Extract the core back label printing logic"""
     try:
         quantity = int(data.get('quantity', 1))
+        env_multiplier = int(data.get('env_multiplier', 1))
+        quantity *= env_multiplier
 
         if CURRENT_USER == "ndefe":
             print(f"Printing {quantity} back single labels on Ndefe's printer")
@@ -456,289 +461,6 @@ def print_single_back_label():
         }), 500
 
 
-
-
-
-
-
-
-
-
-# @app.route('/print-single-front', methods=['POST'])
-# def print_single_front_label():
-#     try:
-#         data = request.get_json()
-#         quantity = int(data.get('quantity', 1))  # default to 1 if not provided
-
-#         if CURRENT_USER.lower() == "ndefe":
-#             print(f"Printing copy {quantity} single front labels on Ndefe's printer")
-#             print(f"Variety Name: {data.get('variety_name')}")
-#             print(f"Crop: {data.get('crop')}")
-#             print(f"Days: {data.get('days')}")
-#             print(f"SKU Suffix: {data.get('sku_suffix')}")
-#             print(f"Pkg. size: {data.get('pkg_size')}")
-#             print(f"Env type: {data.get('env_type')}")
-#             print(f"Lot Code: {data.get('lot_code')}")
-#             print(f"Germination: {data.get('germination')}")
-#             print(f"For Year: {data.get('for_year')}")
-#             print(f"Quantity: {data.get('quantity')}")
-#             print(f"Desc1: {data.get('desc1')}")
-#             print(f"Desc2: {data.get('desc2')}")
-#             print(f"Desc3: {data.get('desc3')}")
-#             print(f"Rad type: {data.get('rad_type')}")
-#             print("================================")
-#         else:
-#             # Gather label content (shared across copies)
-#             variety_name = f"'{data.get('variety_name')}'"
-#             variety_crop = data.get('crop')
-#             days = data.get('days')
-#             env_type = data.get('env_type')
-#             year = data.get('for_year')
-#             days_year = f"{days}    Packed for 20{year}"
-
-#             desc_line1 = data.get('desc1')
-#             desc_line2 = data.get('desc2')
-#             desc_line3 = data.get('desc3')
-#             lot_code = data.get('lot_code')
-#             germination = data.get('germination')
-#             rad_type = data.get('rad_type')
-
-#             if env_type == "LG Coffee":
-#                 pkg_size = f"{data.get('pkg_size')} ••"
-#             elif env_type == "SM Coffee":
-#                 pkg_size = f"{data.get('pkg_size')} •"
-#             else:
-#                 pkg_size = data.get('pkg_size')
-
-#             pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germination}%"
-#             sku_suffix = data.get('sku_suffix')
-
-#             # print logic continues... 
-
-#             # Fonts (reusable)
-#             bold_12 = create_font("Times New Roman", 48, bold=True)
-#             italic_9 = create_font("Times New Roman", 36, italic=True)
-#             normal_8 = create_font("Times New Roman", 32)
-#             bold_16 = create_font("Times New Roman", 60, bold=True)
-#             normal_12 = create_font("Times New Roman", 40)
-#             italic_12 = create_font("Times New Roman", 40, italic=True)
-
-#             printer_name = ROLL_PRINTER
-
-#             # Loop through each copy
-#             for i in range(quantity):
-#                 dc = win32ui.CreateDC()
-#                 dc.CreatePrinterDC(printer_name)
-
-#                 dc.StartDoc("Seed Label")
-#                 dc.StartPage()
-
-#                 # Label size
-#                 dpi = dc.GetDeviceCaps(88)
-#                 label_width = int(2.625 * dpi)
-#                 label_height = int(1.0 * dpi)
-#                 x_center = label_width // 2
-#                 y_start = 20
-
-#                 if "pkt" in sku_suffix:
-#                     if not desc_line3:  # only 2 description lines
-#                         dc.SelectObject(bold_12)
-#                         dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
-#                         y_start += 55
-
-#                         dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-#                         y_start += 58
-
-#                         dc.SelectObject(italic_9)
-#                         dc.TextOut(x_center - dc.GetTextExtent(desc_line1)[0] // 2, y_start, desc_line1)
-#                         y_start += 43
-
-#                         dc.TextOut(x_center - dc.GetTextExtent(desc_line2)[0] // 2, y_start, desc_line2)
-#                         y_start += 50
-
-#                         dc.SelectObject(normal_8)
-#                         dc.TextOut(x_center - dc.GetTextExtent(pkg_lot_germ)[0] // 2, y_start, pkg_lot_germ)
-#                         y_start += 40
-
-#                         dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
-#                     else:  # 3 description lines
-#                         dc.SelectObject(bold_12)
-#                         dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_crop)
-#                         y_start += 55
-
-#                         dc.SelectObject(italic_9)
-#                         dc.TextOut(x_center - dc.GetTextExtent(desc_line1)[0] // 2, y_start, desc_line1)
-#                         y_start += 43
-
-#                         dc.TextOut(x_center - dc.GetTextExtent(desc_line2)[0] // 2, y_start, desc_line2)
-#                         y_start += 43
-
-#                         dc.TextOut(x_center - dc.GetTextExtent(desc_line3)[0] // 2, y_start, desc_line3)
-#                         y_start += 50
-
-#                         dc.SelectObject(normal_8)
-#                         dc.TextOut(x_center - dc.GetTextExtent(pkg_lot_germ)[0] // 2, y_start, pkg_lot_germ)
-#                         y_start += 40
-
-#                         dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
-#                 else:
-#                     lot_germ = f"Lot: {lot_code}    Germ: {germination}%"
-#                     if not desc_line3:
-#                         if not rad_type:
-#                             dc.SelectObject(bold_16)
-#                             dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
-#                             y_start += 69
-
-#                             dc.SelectObject(normal_12)
-#                             dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-#                             y_start += 54
-
-#                             dc.SelectObject(bold_12)
-#                             dc.TextOut(x_center - dc.GetTextExtent(pkg_size)[0] // 2, y_start, pkg_size)
-#                             y_start += 65
-
-#                             dc.SelectObject(normal_12)
-#                             dc.TextOut(x_center - dc.GetTextExtent(lot_germ)[0] // 2, y_start, lot_germ)
-#                             y_start += 48
-
-#                             dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
-#                         else:
-#                             pkg_days = f"{pkg_size} -- {days}"
-#                             lot_germ_year = f"Lot: {lot_code}    Germ: {germination}%    Packed for: {year}"
-
-#                             dc.SelectObject(bold_16)
-#                             dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
-#                             y_start += 64
-
-#                             dc.SelectObject(italic_12)
-#                             dc.TextOut(x_center - dc.GetTextExtent(rad_type)[0] // 2, y_start, rad_type)
-#                             y_start += 55
-
-#                             dc.SelectObject(normal_12)
-#                             dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-#                             y_start += 50
-
-#                             dc.SelectObject(bold_12)
-#                             dc.TextOut(x_center - dc.GetTextExtent(pkg_days)[0] // 2, y_start, pkg_days)
-#                             y_start += 60
-
-#                             dc.SelectObject(normal_12)
-#                             dc.TextOut(x_center - dc.GetTextExtent(lot_germ_year)[0] // 2, y_start, lot_germ_year)
-#                     else:
-#                         dc.SelectObject(bold_16)
-#                         dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-#                         y_start += 80
-
-#                         dc.SelectObject(bold_12)
-#                         dc.TextOut(x_center - dc.GetTextExtent(pkg_size)[0] // 2, y_start, pkg_size)
-#                         y_start += 75
-
-#                         dc.SelectObject(normal_12)
-#                         dc.TextOut(x_center - dc.GetTextExtent(lot_germ)[0] // 2, y_start, lot_germ)
-#                         y_start += 60
-
-#                         dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
-
-#                 dc.EndPage()
-#                 dc.EndDoc()
-#                 dc.DeleteDC()
-
-#         return jsonify({
-#             'success': True,
-#             'message': f'Front Single Label printed successfully ({quantity} copies)'
-#         })
-
-#     except Exception as e:
-#         print(f"Error printing germ label: {str(e)}")
-#         return jsonify({
-#             'success': False,
-#             'error': str(e)
-#         }), 500
-
-
-# @app.route('/print-single-back', methods=['POST'])
-# def print_single_back_label():
-#     try:
-#         data = request.get_json()
-#         quantity = int(data.get('quantity', 1))
-
-#         if CURRENT_USER == "ndefe":
-#             print(f"Printing {quantity} back single labels on Ndefe's printer")
-#             print(f"Back1 {data.get('back1')}")
-#             print(f"Back2 {data.get('back2')}")
-#             print(f"Back3 {data.get('back3')}")
-#             print(f"Back4 {data.get('back4')}")
-#             print(f"Back5 {data.get('back5')}")
-#             print(f"Back6 {data.get('back6')}")
-#             print(f"Back7 {data.get('back7')}")
-#         # Print logic continues...
-
-#         else:
-#             back_lines = [
-#                 data.get('back1'),
-#                 data.get('back2'),
-#                 data.get('back3'),
-#                 data.get('back4'),
-#                 data.get('back5'),
-#                 data.get('back6'),
-#                 data.get('back7')
-#             ]
-
-#             # Remove empty lines (None or "")
-#             back_lines = [line for line in back_lines if line]
-
-#             if not back_lines:
-#                 return jsonify({
-#                     'success': False,
-#                     'message': 'No back lines provided'
-#                 }), 400
-
-#             # Printer setup
-#             printer_name = ROLL_PRINTER
-#             font = create_font("Book Antiqua", 32, italic=True)
-
-#             for i in range(quantity):
-#                 dc = win32ui.CreateDC()
-#                 dc.CreatePrinterDC(printer_name)
-
-#                 dc.StartDoc("Seed Label")
-#                 dc.StartPage()
-
-#                 # Label size: 1" x 2.625" at 300 DPI
-#                 dpi = dc.GetDeviceCaps(88)
-#                 label_width = int(2.625 * dpi)
-#                 label_height = int(1.0 * dpi)
-#                 x_center = label_width // 2
-
-#                 dc.SelectObject(font)
-
-#                 # Spacing logic
-#                 num_lines = len(back_lines)
-#                 line_height = 39
-#                 total_text_height = line_height * num_lines
-#                 remaining_space = label_height - total_text_height
-#                 y_start = (remaining_space // 2) + 12
-
-#                 for line in back_lines:
-#                     text_width = dc.GetTextExtent(line)[0]
-#                     dc.TextOut(x_center - text_width // 2, y_start, line)
-#                     y_start += line_height
-
-#                 dc.EndPage()
-#                 dc.EndDoc()
-#                 dc.DeleteDC()
-
-#         return jsonify({
-#             'success': True,
-#             'message': f'Back Single Label printed successfully ({quantity} copies)'
-#         })
-
-#     except Exception as e:
-#         print(f"Error printing back label: {str(e)}")
-#         return jsonify({
-#             'success': False,
-#             'error': str(e)
-#         }), 500
 
     
 @app.route('/print-sheet-front', methods=['POST'])
@@ -1061,7 +783,7 @@ def print_orders():
         return jsonify({
             'success': True,
             'message': f'Orders printed successfully',
-            'duplicate_orders': duplicate_orders
+            'multiple_order_customers': duplicate_orders
         })
 
     except Exception as e:
@@ -1073,6 +795,134 @@ def print_orders():
 
 
 
+
+@app.route('/print-items-to-pull', methods=['POST'])
+def print_items_to_pull():
+    try:
+        data = request.get_json()
+        items = data.get('items', [])
+        batch_date = data.get('batch_date', 'Unknown')
+        
+        if not items:
+            return jsonify({
+                'success': False,
+                'error': 'No items provided'
+            }), 400
+        
+        # Create pdfs directory if it doesn't exist
+        pdf_dir = 'pdfs'
+        os.makedirs(pdf_dir, exist_ok=True)
+        
+        # Generate filename with current date
+        current_date = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'pull_{current_date}.pdf'
+        file_path = os.path.join(pdf_dir, filename)
+        
+        # Create PDF
+        create_pull_items_pdf(file_path, items, batch_date)
+        
+        # Print using Sumatra (skip if user is ndefe)
+        if CURRENT_USER.lower() != "ndefe":
+            try:
+                command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{file_path}"'
+                subprocess.run(command, check=True, shell=True)
+                print(f"Successfully printed {filename}")
+            except Exception as e:
+                print(f"Failed to print {filename}: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to print: {str(e)}'
+                }), 500
+            finally:
+                # Clean up the file
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Temporary file {file_path} deleted.")
+        else:
+            print(f"PDF created at {file_path} (printing skipped for ndefe)")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully printed {len(items)} items to pull for batch {batch_date}'
+        })
+        
+    except Exception as e:
+        print(f"Error printing items to pull: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+def create_pull_items_pdf(file_path, items, batch_date):
+    """Create a PDF with items to pull table - black and white version"""
+    doc = SimpleDocTemplate(file_path, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+    
+    # Centered title with date
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=20,
+        alignment=1  # Center alignment
+    )
+    title = Paragraph(f"Bulk items to pull -- {batch_date}", title_style)
+    story.append(title)
+    
+    # Table data
+    table_data = [
+        ['#', 'Variety Name', 'Type', 'SKU Suffix', 'Qty']
+    ]
+    
+    for i, item in enumerate(items, 1):
+        table_data.append([
+            str(i),
+            item.get('variety_name', ''),
+            item.get('type', ''),
+            item.get('sku_suffix', ''),
+            str(item.get('quantity', 0))
+        ])
+    
+    # Create table
+    table = Table(table_data, colWidths=[0.5*inch, 3*inch, 1.5*inch, 1*inch, 0.7*inch])
+    
+    # Black and white table style
+    table.setStyle(TableStyle([
+        # Header row - bold and larger font
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        
+        # Data rows - regular font
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        
+        # Alignment
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        
+        # Grid lines
+        ('GRID', (0, 0), (-1, -1), 1, 'black'),
+        
+        # Padding
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    story.append(table)
+    
+    # Footer
+    story.append(Spacer(1, 20))
+    footer_text = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    footer = Paragraph(footer_text, styles['Normal'])
+    story.append(footer)
+    
+    doc.build(story)
+    print(f"PDF created: {file_path}")
 
 
 
@@ -1104,6 +954,45 @@ def generate_packing_slip():
         return jsonify({'success': False, 'error': str(e)})
 
 
+
+@app.route('/reprocess-order', methods=['POST', 'OPTIONS'])
+def reprocess_order():
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    try:
+        print("Reprocessing order in Flask...")
+        data = request.get_json()
+        order = data.get('order')
+        bulk_to_print = data.get('bulk_to_print', {})
+        
+    
+        if not order:
+            return jsonify({'success': False, 'error': 'No order data provided'})
+        
+        order_number = order.get('order_number', 'unknown')
+        
+        # Generate and print the packing slip
+        generate_pdf(order_number, order, action="print")
+        
+
+        # TODO: Process bulk_to_print items here if needed
+        # by calling print_single_front_label_logic, and print_single_back_label_logic (if back lines exist)
+        for sku, item in bulk_to_print.items():
+            print_single_front_label_logic(item)
+            if item.get('back1'):  # Assuming back1 is mandatory for back label
+                print_single_back_label_logic(item)
+        
+        
+        return jsonify({
+            'success': True,
+            'message': f'Order {order_number} reprocessed and sent to printer'
+        })
+       
+    except Exception as e:
+        print(f"Error reprocessing order: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+    
 
 # GENERATES PACKING SLIPS
 def generate_pdf(order_number, order, action):
@@ -1544,12 +1433,12 @@ def generate_pdf(order_number, order, action):
 
     
 
-@app.route('/view-invoice', methods=['POST'])
-def view_invoice():
-    order_number = request.form.get("order_data")
-    # call generate_pdf with action "view"
-    # generate_pdf(order_number, order_data[order_number], action="view")
-    return
+# @app.route('/view-invoice', methods=['POST'])
+# def view_invoice():
+#     order_number = request.form.get("order_data")
+#     # call generate_pdf with action "view"
+#     # generate_pdf(order_number, order_data[order_number], action="view")
+#     return
 
 # Handles printing bulk items from the process order page
 @app.route('/print-range', methods=['POST'])
@@ -1568,6 +1457,8 @@ def print_range():
         
         for item in items:
             quantity = int(item.get('quantity', 1))
+            env_multiplier = int(item.get('env_multiplier', 1))
+            quantity *= env_multiplier
             sku = item.get('sku', '')
             
             # Extract sku_suffix from full sku (everything after the dash)
@@ -1583,8 +1474,8 @@ def print_range():
                 'pkg_size': item.get('pkg_size'),
                 'env_type': item.get('env_type'),
                 'lot_code': item.get('lot', 'N/A'),
-                'germination': '85',  # Default value - you might want to add this to your Django model
-                'for_year': '25',     # Default value - you might want to add this to your Django model
+                'germination': item.get('germination', 'N/A'), 
+                'for_year': item.get('for_year', 'N/A'),  
                 'quantity': quantity,
                 'desc1': item.get('desc1'),
                 'desc2': item.get('desc2'),
