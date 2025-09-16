@@ -1443,9 +1443,14 @@ def generate_pdf(order_number, order, action):
 # Handles printing bulk items from the process order page
 @app.route('/print-range', methods=['POST'])
 def print_range():
+
+    items_missing_data = []
+
     try:
+
         data = request.get_json()
         items = data.get("items")
+        current_order_year = data.get("current_order_year")
         
         if not items:
             return jsonify({
@@ -1465,6 +1470,30 @@ def print_range():
             sku_parts = sku.split('-')
             sku_suffix = sku_parts[-1] if len(sku_parts) > 1 else ''
             
+            lot_code = item.get('lot', '')
+            germination = item.get('germination', '')
+            for_year = item.get('for_year', '')
+            if not lot_code or not germination or not for_year:
+                print(f"Item {sku} is missing lot, germination, or for_year")
+                items_missing_data.append(sku)
+                continue  # Skip this item and move to the next
+
+
+            try:
+                for_year_int = int(for_year)
+                current_year_int = int(current_order_year) if current_order_year else 0
+                
+                if for_year_int < current_year_int:
+                    print(f"Item {sku} germination for_year ({for_year_int}) is less than current_order_year ({current_year_int})")
+                    items_missing_data.append(sku)
+                    continue  # Skip this item
+                    
+            except (ValueError, TypeError):
+                print(f"Item {sku} has invalid for_year ({for_year}) or current_order_year ({current_order_year})")
+                items_missing_data.append(sku)
+                continue  # Skip this item
+
+            
             # Prepare data for printing functions
             print_data = {
                 'variety_name': item.get('variety_name'),
@@ -1482,7 +1511,7 @@ def print_range():
                 'desc3': item.get('desc3'),
                 'rad_type': item.get('rad_type')
             }
-            
+   
             # Print back labels first if needed
             if item.get('print_back', False):
                 back_data = {
@@ -1508,10 +1537,16 @@ def print_range():
                 
             total_printed += quantity
         
-        return jsonify({
+        # ONLY CHANGE: Include items_missing_data in response
+        response = {
             'success': True,
             'message': f'Printed {total_printed} bulk labels successfully',
-        })
+        }
+        
+        if items_missing_data:
+            response['items_missing_data'] = items_missing_data
+            
+        return jsonify(response)
         
     except Exception as e:
         print(f"Error printing bulk range: {str(e)}")
