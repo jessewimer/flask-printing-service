@@ -462,16 +462,34 @@ def print_single_back_label():
 
 
 
-    
-@app.route('/print-sheet-front', methods=['POST'])
-def print_sheet_front():
-    print("Front Sheet Print Job Started")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def print_sheet_front_logic(data):
+    """Extract the core front sheet printing logic"""
     try:
-        data = request.json
         quantity = int(data.get('quantity', 1))
-        if CURRENT_USER == "ndefe":
+        env_multiplier = int(data.get('env_multiplier', 1))
+        print(f"Environmental Multiplier: {env_multiplier}")
+        quantity *= env_multiplier
+
+        if CURRENT_USER.lower() == "ndefe":
             print(f"Printing {quantity} front sheet on Ndefe's printer")
-            print(f"Printing copy {quantity} single front labels on Ndefe's printer")
             print(f"Variety Name: {data.get('variety_name')}")
             print(f"Crop: {data.get('crop')}")
             print(f"Days: {data.get('days')}")
@@ -486,23 +504,23 @@ def print_sheet_front():
             print(f"Desc2: {data.get('desc2')}")
             print(f"Desc3: {data.get('desc3')}")
             print("================================")
-
+            return {'success': True, 'message': f'Front Sheet Label printed successfully ({quantity} copies)'}
         else:
-
+            # Gather label content
             variety_name = f"'{data.get('variety_name')}'"
-            variety_crop = data.get('crop')
+            variety_crop = data.get('crop').upper()
             days = data.get('days')
             env_type = data.get('env_type')
             year = data.get('for_year')
             for_year = f"20{year}"
-            days_year = f"{days}    Packed for 20{year}"
+            days_year = f"{days}    Packed for {for_year}"
 
             desc_line1 = data.get('desc1')
             desc_line2 = data.get('desc2')
             desc_line3 = data.get('desc3')
             lot_code = data.get('lot_code')
             germination = data.get('germination')
-            germ = germination.split("%")[0].strip()
+            germ = germination.split("%")[0].strip() if "%" in germination else germination
 
             if env_type == "LG Coffee":
                 pkg_size = f"{data.get('pkg_size')} ••"
@@ -512,110 +530,130 @@ def print_sheet_front():
                 pkg_size = data.get('pkg_size')
 
             pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germ}%"
-            sku_suffix = data.get('sku_suffix')
-
             envelope = f"Envelope: {env_type}"
 
-            # File name
-            filename = f"{variety_name}_Labels.pdf"
-            full_path = os.path.abspath(filename)
-            c = canvas.Canvas(filename, pagesize=LETTER)
+            # Create fonts for sheet printing
+            bold_12 = create_font("Times New Roman", 48, bold=True)  # 12pt at 300dpi
+            bold_12_crop = create_font("Times New Roman", 48, bold=True)
+            italic_9 = create_font("Times New Roman", 36, italic=True)  # 9pt at 300dpi
+            normal_8 = create_font("Times New Roman", 32)  # 8pt at 300dpi
+            bold_12_envelope = create_font("Times New Roman", 48, bold=True)
+
+            printer_name = SHEET_PRINTER
+
+            # Create fonts for sheet printing
+            bold_12 = create_font("Times New Roman", 48, bold=True)  # 12pt at 300dpi
+            bold_12_crop = create_font("Times New Roman", 48, bold=True)
+            italic_9 = create_font("Times New Roman", 36, italic=True)  # 9pt at 300dpi
+            normal_8 = create_font("Times New Roman", 32)  # 8pt at 300dpi
+            bold_12_envelope = create_font("Times New Roman", 48, bold=True)
+
+            printer_name = SHEET_PRINTER
+
+            # Print single sheet
+            dc = win32ui.CreateDC()
+            dc.CreatePrinterDC(printer_name)
+
+            dc.StartDoc("Seed Label Sheet")
+            dc.StartPage()
+
+            # Get printer DPI and page dimensions
+            dpi = dc.GetDeviceCaps(88)  # LOGPIXELSX
+            page_width = dc.GetDeviceCaps(8)   # HORZRES
+            page_height = dc.GetDeviceCaps(10)  # VERTRES
             
-            # Label sheet dimensions
-            page_width, page_height = LETTER
-            margin_y = 35  # Vertical margin, slightly adjusted
-            label_width = page_width / 3  # Divide the page into 3 columns
-            label_height = (page_height - margin_y) / 10.44  # Divide the page into 10 rows
-
-            # Column adjustments
-            left_col_offset = 5  # Move the left column slightly left
-            middle_col_offset = 0  # Keep the middle column centered
-            right_col_offset = -5   # Move the right column slightly right
+            # Calculate label dimensions (3 columns x 10 rows on letter size)
+            # Letter size at 300dpi is approximately 2550 x 3300 pixels
+            margin_y = int(0.5 * dpi)  # 0.5 inch margin
+            label_width = page_width // 3
+            label_height = (page_height - margin_y) // 10
+            
+            # Column and row offsets (converted to printer units)
+            left_col_offset = int(0.05 * dpi)    # Small left adjustment
+            middle_col_offset = 0
+            right_col_offset = int(-0.05 * dpi)  # Small right adjustment
             col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+            row_offset = int(-0.05 * dpi)  # Small downward adjustment
 
-            # Top row adjustment
-            row_offset = -5  # Move rows slightly down
-
-            # if envenlope == LG Coffee, add two ••, if SM Coffee, add one •
-            if env_type == "LG Coffee":
-                pkg_size = f"{pkg_size} ••"
-            elif env_type == "SM Coffee":
-                pkg_size = f"{pkg_size} •"
-            else:
-                pkg_size = pkg_size
-
-            # Label content
-            variety_name = f"'{variety_name}'"
-            variety_crop = variety_crop.upper()
-
-            # pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germ}%"
-            days_year = f"{days}    Packed for {for_year}"
-
-            # Calculate the position for the envelope
-            envelope_x = 40  # Adjust to position the envelope to the left
-            envelope_y = page_height - margin_y - 10 * label_height - 18  # Position below the last row of labels
-
-            # Draw labels (3 columns x 10 rows)
+            # Draw 30 labels (3 columns x 10 rows)
             for row in range(10):
-                y = page_height - margin_y - (row * label_height) + row_offset
+                y_base = margin_y + (row * label_height) + row_offset
+                
                 for col in range(3):
-                    x = (col * label_width) + (label_width / 2) + col_offsets[col]
+                    x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
+                    
+                    # Current y position for this label
+                    y_current = y_base + int(0.1 * dpi)  # Start 0.1" from top of label
+                    
+                    # Draw variety name
+                    dc.SelectObject(bold_12)
+                    text_width = dc.GetTextExtent(variety_name)[0]
+                    dc.TextOut(x_center - text_width // 2, y_current, variety_name)
+                    y_current += int(0.15 * dpi)  # Move down 0.15"
+                    
+                    # Draw crop
+                    dc.SelectObject(bold_12_crop)
+                    text_width = dc.GetTextExtent(variety_crop)[0]
+                    dc.TextOut(x_center - text_width // 2, y_current, variety_crop)
+                    y_current += int(0.12 * dpi)  # Move down 0.12"
+                    
+                    # Draw description lines
+                    dc.SelectObject(italic_9)
+                    if desc_line1:
+                        text_width = dc.GetTextExtent(desc_line1)[0]
+                        dc.TextOut(x_center - text_width // 2, y_current, desc_line1)
+                        y_current += int(0.1 * dpi)
+                    
+                    if desc_line2:
+                        text_width = dc.GetTextExtent(desc_line2)[0]
+                        dc.TextOut(x_center - text_width // 2, y_current, desc_line2)
+                        y_current += int(0.1 * dpi)
+                    
+                    if desc_line3:
+                        text_width = dc.GetTextExtent(desc_line3)[0]
+                        dc.TextOut(x_center - text_width // 2, y_current, desc_line3)
+                        y_current += int(0.1 * dpi)
+                    
+                    # Add some space before package info
+                    y_current += int(0.05 * dpi)
+                    
+                    # Draw package/lot/germination info
+                    dc.SelectObject(normal_8)
+                    text_width = dc.GetTextExtent(pkg_lot_germ)[0]
+                    dc.TextOut(x_center - text_width // 2, y_current, pkg_lot_germ)
+                    y_current += int(0.1 * dpi)
+                    
+                    # Draw days/year info
+                    text_width = dc.GetTextExtent(days_year)[0]
+                    dc.TextOut(x_center - text_width // 2, y_current, days_year)
 
-                    # Draw each label
-                    c.setFont("Times-Bold", 12)
-                    c.drawCentredString(x, y - 10, variety_name)
+            # Draw envelope info at bottom of page
+            dc.SelectObject(bold_12_envelope)
+            envelope_x = int(0.5 * dpi)  # 0.5" from left edge
+            envelope_y = page_height - int(0.3 * dpi)  # 0.3" from bottom
+            dc.TextOut(envelope_x, envelope_y, envelope)
 
-                    c.setFont("Times-Bold", 12)
-                    c.drawCentredString(x, y - 23, variety_crop)
+            dc.EndPage()
+            dc.EndDoc()
+            dc.DeleteDC()
 
-                    c.setFont("Times-Italic", 9)
-                    c.drawCentredString(x, y - 33, desc_line1) 
-                    c.drawCentredString(x, y - 43, desc_line2)  
+            return {'success': True, 'message': f'Front Sheet Label printed successfully (1 copy)'}
 
-                    c.setFont("Times-Roman", 8)
-                    c.drawCentredString(x, y - 54, pkg_lot_germ)  
-                    c.drawCentredString(x, y - 63, days_year)  
-
-            # Set font and draw the envelope text
-            c.setFont("Times-Bold", 12)
-            c.drawString(envelope_x, envelope_y, envelope)
-            c.save() 
-
-            # Handle printing
-            try:
-                for _ in range(quantity):
-                    command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{full_path}"'
-                    subprocess.run(command, check=True, shell=True)
-
-            except Exception as e:
-                print(f"Failed to print: {e}")
-            finally:
-                # Clean up the file
-                if os.path.exists(filename):
-                    os.remove(filename)
-
-        return jsonify({
-            'success': True,
-            'message': f'Back Single Label printed successfully ({quantity} copies)'
-        })   
-                                 
     except Exception as e:
-        print(f"Error printing back label: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-    
+        print(f"Error printing front sheet: {str(e)}")
+        return {'success': False, 'error': str(e)}
 
-@app.route('/print-sheet-back', methods=['POST'])
-def print_sheet_back():
 
+def print_sheet_back_logic(data):
+    """Extract the core back sheet printing logic"""
     try:
-        data = request.get_json()
         quantity = int(data.get('quantity', 1))
+        env_multiplier = int(data.get('env_multiplier', 1))
+        print(f"Environmental Multiplier: {env_multiplier}")
+        quantity *= env_multiplier
         variety_name = f"'{data.get('variety_name')}'"
 
-        if CURRENT_USER == "ndefe":
+        if CURRENT_USER.lower() == "ndefe":
             print(f"Printing {quantity} back single labels for {variety_name} on Ndefe's printer")
             print(f"Back1 {data.get('back1')}")
             print(f"Back2 {data.get('back2')}")
@@ -624,8 +662,10 @@ def print_sheet_back():
             print(f"Back5 {data.get('back5')}")
             print(f"Back6 {data.get('back6')}")
             print(f"Back7 {data.get('back7')}")
-
+            print("================================")
+            return {'success': True, 'message': f'Back Sheet Label printed successfully ({quantity} copies)'}
         else:
+            # Gather back label content
             back_lines = [
                 data.get('back1'),
                 data.get('back2'),
@@ -636,99 +676,424 @@ def print_sheet_back():
                 data.get('back7')
             ]
 
-            # Remove empty lines (None or "")
+            # Remove empty lines
             back_lines = [line for line in back_lines if line]
 
             if not back_lines:
-                return jsonify({
-                    'success': False,
-                    'message': 'No back lines provided'
-                }), 400
+                return {'success': False, 'message': 'No back lines provided'}
 
-            # File name
-            filename = f"{variety_name}_Back_Labels.pdf"
-            full_path = os.path.abspath(filename)
-            c = canvas.Canvas(filename, pagesize=LETTER)
+            # Ensure we have at least 6 lines, pad with empty strings if needed
+            while len(back_lines) < 6:
+                back_lines.append("")
             
-            # Label sheet dimensions
-            page_width, page_height = LETTER
-            margin_y = 35  # Vertical margin, slightly adjusted
-            label_width = page_width / 3  # Divide the page into 3 columns
-            label_height = (page_height - margin_y) / 10.5  # Divide the page into 10 rows
+            has_seventh_line = len(back_lines) > 6 and back_lines[6]
 
-            # Column adjustments
-            left_col_offset = 5  # Move the left column slightly left
-            middle_col_offset = 0  # Keep the middle column centered
-            right_col_offset = -5   # Move the right column slightly right
+            # Create fonts
+            back_font = create_font("Book Antiqua", 32)  # 8pt at 300dpi
+            footer_font = create_font("Calibri", 40)  # 10pt at 300dpi
+
+            printer_name = SHEET_PRINTER
+
+            # Print single sheet
+            dc = win32ui.CreateDC()
+            dc.CreatePrinterDC(printer_name)
+
+            dc.StartDoc("Seed Label Back Sheet")
+            dc.StartPage()
+
+            # Get printer DPI and page dimensions
+            dpi = dc.GetDeviceCaps(88)
+            page_width = dc.GetDeviceCaps(8)
+            page_height = dc.GetDeviceCaps(10)
+            
+            # Calculate label dimensions
+            margin_y = int(0.5 * dpi)
+            label_width = page_width // 3
+            label_height = (page_height - margin_y) // 10
+            
+            # Column offsets
+            left_col_offset = int(0.05 * dpi)
+            middle_col_offset = 0
+            right_col_offset = int(-0.05 * dpi)
             col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+            row_offset = int(-0.01 * dpi)
 
-            # Top row adjustment
-            row_offset = -1  # Move rows slightly down
-
-            back1 = back_lines[0]
-            back2 = back_lines[1] 
-            back3 = back_lines[2] 
-            back4 = back_lines[3] 
-            back5 = back_lines[4] 
-            back6 = back_lines[5] 
-            back7 = back_lines[6] if len(back_lines) > 6 else None
-
-            # Draw labels (3 columns x 10 rows)
-            c.setFont("Book Antiqua", 8)
+            # Draw 30 labels (3 columns x 10 rows)
+            dc.SelectObject(back_font)
+            
             for row in range(10):
-                y = page_height - margin_y - (row * label_height) + row_offset
+                y_base = margin_y + (row * label_height) + row_offset
+                
                 for col in range(3):
-                    x = (col * label_width) + (label_width / 2) + col_offsets[col]
+                    x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
+                    
+                    # Adjust starting position based on number of lines
+                    if has_seventh_line:
+                        y_start = y_base + int(0.05 * dpi)  # Start higher for 7 lines
+                        line_spacing = int(0.1 * dpi)  # Tighter spacing
+                    else:
+                        y_start = y_base + int(0.1 * dpi)  # Start lower for 6 lines
+                        line_spacing = int(0.12 * dpi)  # More spacing
+                    
+                    y_current = y_start
+                    
+                    # Draw each back line
+                    for idx, line in enumerate(back_lines[:7]):  # Max 7 lines
+                        if line:  # Only draw non-empty lines
+                            text_width = dc.GetTextExtent(line)[0]
+                            dc.TextOut(x_center - text_width // 2, y_current, line)
+                        y_current += line_spacing
 
-                    if back7 == None:
-                        c.drawCentredString(x, y - 15, back1)
-                        c.drawCentredString(x, y - 25, back2)
-                        c.drawCentredString(x, y - 35, back3)
-                        c.drawCentredString(x, y - 45, back4)
-                        c.drawCentredString(x, y - 55, back5)
-                        c.drawCentredString(x, y - 65, back6)
-                    else:    
-                        c.drawCentredString(x, y - 10, back1)
-                        c.drawCentredString(x, y - 20, back2)
-                        c.drawCentredString(x, y - 30, back3)
-                        c.drawCentredString(x, y - 40, back4)
-                        c.drawCentredString(x, y - 50, back5)
-                        c.drawCentredString(x, y - 60, back6)
-                        c.drawCentredString(x, y - 70, back7)
-
-            # Footer: Variety name at bottom margin
-            c.setFont("Calibri", 10)
+            # Draw footer with variety name
+            dc.SelectObject(footer_font)
             footer_text = f"Variety: {variety_name}"
-            c.drawString(40, 15, footer_text)
+            footer_x = int(0.5 * dpi)  # 0.5" from left
+            footer_y = page_height - int(0.3 * dpi)  # 0.3" from bottom
+            dc.TextOut(footer_x, footer_y, footer_text)
 
-            c.save() 
+            dc.EndPage()
+            dc.EndDoc()
+            dc.DeleteDC()
 
-            # Handle printing
-            if CURRENT_USER.lower() != "ndefe":
-                try:
-                    for _ in range(quantity):
-                        command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{full_path}"'
-                        subprocess.run(command, check=True, shell=True)
+            return {'success': True, 'message': f'Back Sheet Label printed successfully (1 copy)'}
 
-                except Exception as e:
-                    print(f"Failed to print: {e}")
-                finally:
-                    # Clean up the file
-                    pass
-                    if os.path.exists(filename):
-                        os.remove(filename)
-                        print(f"Temporary file {filename} deleted.")
+    except Exception as e:
+        print(f"Error printing back sheet: {str(e)}")
+        return {'success': False, 'error': str(e)}
+
+
+@app.route('/print-sheet-front-direct', methods=['POST'])
+def print_sheet_front_direct():
+    print("Front Sheet Print Job Started (Direct Printing)")
+    try:
+        data = request.json
+        quantity = int(data.get('quantity', 1))
+        env_multiplier = int(data.get('env_multiplier', 1))
+        total_quantity = quantity * env_multiplier
+
+        # Loop through each copy
+        for i in range(total_quantity):
+            result = print_sheet_front_logic(data)
+            if not result['success']:
+                return jsonify(result), 500
+
         return jsonify({
             'success': True,
-            'message': f'Back Single Label printed successfully ({quantity} copies)'
-        }) 
-    
+            'message': f'Front Sheet Label printed successfully ({total_quantity} copies)'
+        })
+
     except Exception as e:
-        print(f"Error printing back label: {str(e)}")
+        print(f"Error printing front sheet: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
+
+@app.route('/print-sheet-back-direct', methods=['POST'])
+def print_sheet_back_direct():
+    print("Back Sheet Print Job Started (Direct Printing)")
+    try:
+        data = request.get_json()
+        quantity = int(data.get('quantity', 1))
+        env_multiplier = int(data.get('env_multiplier', 1))
+        total_quantity = quantity * env_multiplier
+
+        # Loop through each copy
+        for i in range(total_quantity):
+            result = print_sheet_back_logic(data)
+            if not result['success']:
+                return jsonify(result), 500
+
+        return jsonify({
+            'success': True,
+            'message': f'Back Sheet Label printed successfully ({total_quantity} copies)'
+        })
+
+    except Exception as e:
+        print(f"Error printing back sheet: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+
+
+
+
+
+
+
+
+    
+# @app.route('/print-sheet-front', methods=['POST'])
+# def print_sheet_front():
+#     print("Front Sheet Print Job Started")
+#     try:
+#         data = request.json
+#         quantity = int(data.get('quantity', 1))
+#         if CURRENT_USER == "ndefe":
+#             print(f"Printing {quantity} front sheet on Ndefe's printer")
+#             print(f"Printing copy {quantity} single front labels on Ndefe's printer")
+#             print(f"Variety Name: {data.get('variety_name')}")
+#             print(f"Crop: {data.get('crop')}")
+#             print(f"Days: {data.get('days')}")
+#             print(f"SKU Suffix: {data.get('sku_suffix')}")
+#             print(f"Pkg. size: {data.get('pkg_size')}")
+#             print(f"Env type: {data.get('env_type')}")
+#             print(f"Lot Code: {data.get('lot_code')}")
+#             print(f"Germination: {data.get('germination')}")
+#             print(f"For Year: {data.get('for_year')}")
+#             print(f"Quantity: {data.get('quantity')}")
+#             print(f"Desc1: {data.get('desc1')}")
+#             print(f"Desc2: {data.get('desc2')}")
+#             print(f"Desc3: {data.get('desc3')}")
+#             print("================================")
+
+#         else:
+
+#             variety_name = f"'{data.get('variety_name')}'"
+#             variety_crop = data.get('crop')
+#             days = data.get('days')
+#             env_type = data.get('env_type')
+#             year = data.get('for_year')
+#             for_year = f"20{year}"
+#             days_year = f"{days}    Packed for 20{year}"
+
+#             desc_line1 = data.get('desc1')
+#             desc_line2 = data.get('desc2')
+#             desc_line3 = data.get('desc3')
+#             lot_code = data.get('lot_code')
+#             germination = data.get('germination')
+#             germ = germination.split("%")[0].strip()
+
+#             if env_type == "LG Coffee":
+#                 pkg_size = f"{data.get('pkg_size')} ••"
+#             elif env_type == "SM Coffee":
+#                 pkg_size = f"{data.get('pkg_size')} •"
+#             else:
+#                 pkg_size = data.get('pkg_size')
+
+#             pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germ}%"
+#             sku_suffix = data.get('sku_suffix')
+
+#             envelope = f"Envelope: {env_type}"
+
+#             # File name
+#             filename = f"{variety_name}_Labels.pdf"
+#             full_path = os.path.abspath(filename)
+#             c = canvas.Canvas(filename, pagesize=LETTER)
+            
+#             # Label sheet dimensions
+#             page_width, page_height = LETTER
+#             margin_y = 35  # Vertical margin, slightly adjusted
+#             label_width = page_width / 3  # Divide the page into 3 columns
+#             label_height = (page_height - margin_y) / 10.44  # Divide the page into 10 rows
+
+#             # Column adjustments
+#             left_col_offset = 5  # Move the left column slightly left
+#             middle_col_offset = 0  # Keep the middle column centered
+#             right_col_offset = -5   # Move the right column slightly right
+#             col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+
+#             # Top row adjustment
+#             row_offset = -5  # Move rows slightly down
+
+#             # if envenlope == LG Coffee, add two ••, if SM Coffee, add one •
+#             if env_type == "LG Coffee":
+#                 pkg_size = f"{pkg_size} ••"
+#             elif env_type == "SM Coffee":
+#                 pkg_size = f"{pkg_size} •"
+#             else:
+#                 pkg_size = pkg_size
+
+#             # Label content
+#             variety_name = f"'{variety_name}'"
+#             variety_crop = variety_crop.upper()
+
+#             # pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germ}%"
+#             days_year = f"{days}    Packed for {for_year}"
+
+#             # Calculate the position for the envelope
+#             envelope_x = 40  # Adjust to position the envelope to the left
+#             envelope_y = page_height - margin_y - 10 * label_height - 18  # Position below the last row of labels
+
+#             # Draw labels (3 columns x 10 rows)
+#             for row in range(10):
+#                 y = page_height - margin_y - (row * label_height) + row_offset
+#                 for col in range(3):
+#                     x = (col * label_width) + (label_width / 2) + col_offsets[col]
+
+#                     # Draw each label
+#                     c.setFont("Times-Bold", 12)
+#                     c.drawCentredString(x, y - 10, variety_name)
+
+#                     c.setFont("Times-Bold", 12)
+#                     c.drawCentredString(x, y - 23, variety_crop)
+
+#                     c.setFont("Times-Italic", 9)
+#                     c.drawCentredString(x, y - 33, desc_line1) 
+#                     c.drawCentredString(x, y - 43, desc_line2)  
+
+#                     c.setFont("Times-Roman", 8)
+#                     c.drawCentredString(x, y - 54, pkg_lot_germ)  
+#                     c.drawCentredString(x, y - 63, days_year)  
+
+#             # Set font and draw the envelope text
+#             c.setFont("Times-Bold", 12)
+#             c.drawString(envelope_x, envelope_y, envelope)
+#             c.save() 
+
+#             # Handle printing
+#             try:
+#                 for _ in range(quantity):
+#                     command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{full_path}"'
+#                     subprocess.run(command, check=True, shell=True)
+
+#             except Exception as e:
+#                 print(f"Failed to print: {e}")
+#             finally:
+#                 # Clean up the file
+#                 if os.path.exists(filename):
+#                     os.remove(filename)
+
+#         return jsonify({
+#             'success': True,
+#             'message': f'Back Single Label printed successfully ({quantity} copies)'
+#         })   
+                                 
+#     except Exception as e:
+#         print(f"Error printing back label: {str(e)}")
+#         return jsonify({
+#             'success': False,
+#             'error': str(e)
+#         }), 500
+    
+
+# @app.route('/print-sheet-back', methods=['POST'])
+# def print_sheet_back():
+
+#     try:
+#         data = request.get_json()
+#         quantity = int(data.get('quantity', 1))
+#         variety_name = f"'{data.get('variety_name')}'"
+
+#         if CURRENT_USER == "ndefe":
+#             print(f"Printing {quantity} back single labels for {variety_name} on Ndefe's printer")
+#             print(f"Back1 {data.get('back1')}")
+#             print(f"Back2 {data.get('back2')}")
+#             print(f"Back3 {data.get('back3')}")
+#             print(f"Back4 {data.get('back4')}")
+#             print(f"Back5 {data.get('back5')}")
+#             print(f"Back6 {data.get('back6')}")
+#             print(f"Back7 {data.get('back7')}")
+
+#         else:
+#             back_lines = [
+#                 data.get('back1'),
+#                 data.get('back2'),
+#                 data.get('back3'),
+#                 data.get('back4'),
+#                 data.get('back5'),
+#                 data.get('back6'),
+#                 data.get('back7')
+#             ]
+
+#             # Remove empty lines (None or "")
+#             back_lines = [line for line in back_lines if line]
+
+#             if not back_lines:
+#                 return jsonify({
+#                     'success': False,
+#                     'message': 'No back lines provided'
+#                 }), 400
+
+#             # File name
+#             filename = f"{variety_name}_Back_Labels.pdf"
+#             full_path = os.path.abspath(filename)
+#             c = canvas.Canvas(filename, pagesize=LETTER)
+            
+#             # Label sheet dimensions
+#             page_width, page_height = LETTER
+#             margin_y = 35  # Vertical margin, slightly adjusted
+#             label_width = page_width / 3  # Divide the page into 3 columns
+#             label_height = (page_height - margin_y) / 10.5  # Divide the page into 10 rows
+
+#             # Column adjustments
+#             left_col_offset = 5  # Move the left column slightly left
+#             middle_col_offset = 0  # Keep the middle column centered
+#             right_col_offset = -5   # Move the right column slightly right
+#             col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+
+#             # Top row adjustment
+#             row_offset = -1  # Move rows slightly down
+
+#             back1 = back_lines[0]
+#             back2 = back_lines[1] 
+#             back3 = back_lines[2] 
+#             back4 = back_lines[3] 
+#             back5 = back_lines[4] 
+#             back6 = back_lines[5] 
+#             back7 = back_lines[6] if len(back_lines) > 6 else None
+
+#             # Draw labels (3 columns x 10 rows)
+#             c.setFont("Book Antiqua", 8)
+#             for row in range(10):
+#                 y = page_height - margin_y - (row * label_height) + row_offset
+#                 for col in range(3):
+#                     x = (col * label_width) + (label_width / 2) + col_offsets[col]
+
+#                     if back7 == None:
+#                         c.drawCentredString(x, y - 15, back1)
+#                         c.drawCentredString(x, y - 25, back2)
+#                         c.drawCentredString(x, y - 35, back3)
+#                         c.drawCentredString(x, y - 45, back4)
+#                         c.drawCentredString(x, y - 55, back5)
+#                         c.drawCentredString(x, y - 65, back6)
+#                     else:    
+#                         c.drawCentredString(x, y - 10, back1)
+#                         c.drawCentredString(x, y - 20, back2)
+#                         c.drawCentredString(x, y - 30, back3)
+#                         c.drawCentredString(x, y - 40, back4)
+#                         c.drawCentredString(x, y - 50, back5)
+#                         c.drawCentredString(x, y - 60, back6)
+#                         c.drawCentredString(x, y - 70, back7)
+
+#             # Footer: Variety name at bottom margin
+#             c.setFont("Calibri", 10)
+#             footer_text = f"Variety: {variety_name}"
+#             c.drawString(40, 15, footer_text)
+
+#             c.save() 
+
+#             # Handle printing
+#             if CURRENT_USER.lower() != "ndefe":
+#                 try:
+#                     for _ in range(quantity):
+#                         command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{full_path}"'
+#                         subprocess.run(command, check=True, shell=True)
+
+#                 except Exception as e:
+#                     print(f"Failed to print: {e}")
+#                 finally:
+#                     # Clean up the file
+#                     pass
+#                     if os.path.exists(filename):
+#                         os.remove(filename)
+#                         print(f"Temporary file {filename} deleted.")
+#         return jsonify({
+#             'success': True,
+#             'message': f'Back Single Label printed successfully ({quantity} copies)'
+#         }) 
+    
+#     except Exception as e:
+#         print(f"Error printing back label: {str(e)}")
+#         return jsonify({
+#             'success': False,
+#             'error': str(e)
+#         }), 500
     
 
 @app.route('/print-orders', methods=['POST'])
@@ -1493,7 +1858,7 @@ def print_range():
                 items_missing_data.append(sku)
                 continue  # Skip this item
 
-            
+
             # Prepare data for printing functions
             print_data = {
                 'variety_name': item.get('variety_name'),
