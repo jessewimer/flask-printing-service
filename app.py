@@ -472,13 +472,6 @@ def print_single_back_label():
 
 
 
-
-
-
-
-
-
-
 def print_sheet_front_logic(data):
     """Extract the core front sheet printing logic"""
     try:
@@ -531,21 +524,13 @@ def print_sheet_front_logic(data):
             pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germination}%"
             sku_suffix = data.get('sku_suffix')
 
-            # Fonts (same as single label)
-            # bold_12 = create_font("Times New Roman", 48, bold=True)
-            # italic_9 = create_font("Times New Roman", 36, italic=True)
-            # normal_8 = create_font("Times New Roman", 32)
-            # bold_16 = create_font("Times New Roman", 60, bold=True)
-            # normal_12 = create_font("Times New Roman", 40)
-            # italic_12 = create_font("Times New Roman", 40, italic=True)
-            # double font sizes
-            bold_12 = create_font("Times New Roman", 96, bold=True)
-            italic_9 = create_font("Times New Roman", 72, italic=True)
-            normal_8 = create_font("Times New Roman", 64)
-            bold_16 = create_font("Times New Roman", 120, bold=True)
-            normal_12 = create_font("Times New Roman", 80)
-            italic_12 = create_font("Times New Roman", 80, italic=True)
-
+            # Fonts (doubled for 600 DPI vs 300 DPI)
+            bold_12 = create_font("Times New Roman", 96, bold=True)     # 48 * 2
+            italic_9 = create_font("Times New Roman", 72, italic=True)  # 36 * 2
+            normal_8 = create_font("Times New Roman", 64)              # 32 * 2
+            bold_16 = create_font("Times New Roman", 120, bold=True)   # 60 * 2
+            normal_12 = create_font("Times New Roman", 80)            # 40 * 2
+            italic_12 = create_font("Times New Roman", 80, italic=True) # 40 * 2
 
             printer_name = SHEET_PRINTER
 
@@ -579,48 +564,48 @@ def print_sheet_front_logic(data):
                     
                     for col in range(3):
                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
-                        y_start = y_base + 20  # Start position within each label
+                        y_start = y_base + 40  # Doubled from 20
 
                         # Use same conditional logic as single front label
                         if "pkt" in sku_suffix:
                             if not desc_line3:  # only 2 description lines
                                 dc.SelectObject(bold_12)
                                 dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
-                                y_start += 55
+                                y_start += 110  # was 55
 
                                 dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-                                y_start += 58
+                                y_start += 116  # was 58
 
                                 dc.SelectObject(italic_9)
                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line1)[0] // 2, y_start, desc_line1)
-                                y_start += 43
+                                y_start += 86  # was 43
 
                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line2)[0] // 2, y_start, desc_line2)
-                                y_start += 50
+                                y_start += 100  # was 50
 
                                 dc.SelectObject(normal_8)
                                 dc.TextOut(x_center - dc.GetTextExtent(pkg_lot_germ)[0] // 2, y_start, pkg_lot_germ)
-                                y_start += 40
+                                y_start += 80  # was 40
 
                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
                             else:  # 3 description lines
                                 dc.SelectObject(bold_12)
                                 dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-                                y_start += 55
+                                y_start += 110  # was 55
 
                                 dc.SelectObject(italic_9)
                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line1)[0] // 2, y_start, desc_line1)
-                                y_start += 43
+                                y_start += 86  # was 43
 
                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line2)[0] // 2, y_start, desc_line2)
-                                y_start += 43
+                                y_start += 86  # was 43
 
                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line3)[0] // 2, y_start, desc_line3)
-                                y_start += 50
+                                y_start += 100  # was 50
 
                                 dc.SelectObject(normal_8)
                                 dc.TextOut(x_center - dc.GetTextExtent(pkg_lot_germ)[0] // 2, y_start, pkg_lot_germ)
-                                y_start += 40
+                                y_start += 80  # was 40
 
                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
                         else:
@@ -629,19 +614,19 @@ def print_sheet_front_logic(data):
                                 if not rad_type:
                                     dc.SelectObject(bold_16)
                                     dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
-                                    y_start += 69
+                                    y_start += 138  # was 69
 
                                     dc.SelectObject(normal_12)
                                     dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-                                    y_start += 54
+                                    y_start += 108  # was 54
 
                                     dc.SelectObject(bold_12)
                                     dc.TextOut(x_center - dc.GetTextExtent(pkg_size)[0] // 2, y_start, pkg_size)
-                                    y_start += 65
+                                    y_start += 130  # was 65
 
                                     dc.SelectObject(normal_12)
                                     dc.TextOut(x_center - dc.GetTextExtent(lot_germ)[0] // 2, y_start, lot_germ)
-                                    y_start += 48
+                                    y_start += 96  # was 48
 
                                     dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
                                 else:
@@ -650,40 +635,40 @@ def print_sheet_front_logic(data):
 
                                     dc.SelectObject(bold_16)
                                     dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
-                                    y_start += 64
+                                    y_start += 128  # was 64
 
                                     dc.SelectObject(italic_12)
                                     dc.TextOut(x_center - dc.GetTextExtent(rad_type)[0] // 2, y_start, rad_type)
-                                    y_start += 55
+                                    y_start += 110  # was 55
 
                                     dc.SelectObject(normal_12)
                                     dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-                                    y_start += 50
+                                    y_start += 100  # was 50
 
                                     dc.SelectObject(bold_12)
                                     dc.TextOut(x_center - dc.GetTextExtent(pkg_days)[0] // 2, y_start, pkg_days)
-                                    y_start += 60
+                                    y_start += 120  # was 60
 
                                     dc.SelectObject(normal_12)
                                     dc.TextOut(x_center - dc.GetTextExtent(lot_germ_year)[0] // 2, y_start, lot_germ_year)
                             else:
                                 dc.SelectObject(bold_16)
                                 dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
-                                y_start += 80
+                                y_start += 160  # was 80
 
                                 dc.SelectObject(bold_12)
                                 dc.TextOut(x_center - dc.GetTextExtent(pkg_size)[0] // 2, y_start, pkg_size)
-                                y_start += 75
+                                y_start += 150  # was 75
 
                                 dc.SelectObject(normal_12)
                                 dc.TextOut(x_center - dc.GetTextExtent(lot_germ)[0] // 2, y_start, lot_germ)
-                                y_start += 60
+                                y_start += 120  # was 60
 
                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
 
                 # Add envelope info at bottom of sheet
                 envelope = f"Envelope: {env_type}"
-                envelope_font = create_font("Times New Roman", 48, bold=True)
+                envelope_font = create_font("Times New Roman", 96, bold=True)  # Doubled from 48
                 dc.SelectObject(envelope_font)
                 envelope_x = int(0.5 * dpi)
                 envelope_y = page_height - int(0.3 * dpi)
@@ -698,6 +683,365 @@ def print_sheet_front_logic(data):
     except Exception as e:
         print(f"Error printing front sheet: {str(e)}")
         return {'success': False, 'error': str(e)}
+
+
+def print_sheet_back_logic(data):
+    """Extract the core back sheet printing logic"""
+    try:
+        quantity = int(data.get('quantity', 1))
+        env_multiplier = int(data.get('env_multiplier', 1))
+        print(f"Environmental Multiplier: {env_multiplier}")
+        quantity *= env_multiplier
+        variety_name = f"'{data.get('variety_name')}'"
+
+        if CURRENT_USER.lower() == "ndefe":
+            print(f"Printing {quantity} back sheet labels for {variety_name} on Ndefe's printer")
+            print(f"Back1 {data.get('back1')}")
+            print(f"Back2 {data.get('back2')}")
+            print(f"Back3 {data.get('back3')}")
+            print(f"Back4 {data.get('back4')}")
+            print(f"Back5 {data.get('back5')}")
+            print(f"Back6 {data.get('back6')}")
+            print(f"Back7 {data.get('back7')}")
+            print("================================")
+            return {'success': True, 'message': f'Back Sheet Label printed successfully ({quantity} copies)'}
+        else:
+            # Gather back label content (same as single back label logic)
+            back_lines = [
+                data.get('back1'),
+                data.get('back2'),
+                data.get('back3'),
+                data.get('back4'),
+                data.get('back5'),
+                data.get('back6'),
+                data.get('back7')
+            ]
+            
+            # Remove empty lines (same as single back label)
+            back_lines = [line for line in back_lines if line]
+            
+            if not back_lines:
+                return {'success': False, 'message': 'No back lines provided'}
+
+            # Font (same as single back label)
+            font = create_font("Book Antiqua", 32, italic=True)
+            footer_font = create_font("Calibri", 40)
+
+            printer_name = SHEET_PRINTER
+
+            # Loop through each copy (same as single label approach)
+            for i in range(quantity):
+                dc = win32ui.CreateDC()
+                dc.CreatePrinterDC(printer_name)
+
+                dc.StartDoc("Seed Label Back Sheet")
+                dc.StartPage()
+
+                # Get printer DPI and calculate sheet dimensions
+                dpi = dc.GetDeviceCaps(88)
+                page_width = dc.GetDeviceCaps(8)
+                page_height = dc.GetDeviceCaps(10)
+                
+                # Sheet layout: 3 columns x 10 rows = 30 labels
+                margin_y = int(0.5 * dpi)
+                label_width = page_width // 3
+                label_height = (page_height - margin_y) // 10
+                
+                # Column adjustments for better alignment
+                left_col_offset = int(0.05 * dpi)
+                middle_col_offset = 0
+                right_col_offset = int(-0.05 * dpi)
+                col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+
+                dc.SelectObject(font)
+
+                # Spacing logic (same as single back label)
+                num_lines = len(back_lines)
+                line_height = 39  # Exact same as single back label
+                total_text_height = line_height * num_lines
+
+                # Draw 30 labels (3 columns x 10 rows)
+                for row in range(10):
+                    y_base = margin_y + (row * label_height)
+                    
+                    for col in range(3):
+                        x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
+                        
+                        # Calculate y_start (same logic as single back label)
+                        remaining_space = label_height - total_text_height
+                        y_start = y_base + (remaining_space // 2) + 12
+
+                        # Draw each back line (same as single back label)
+                        for line in back_lines:
+                            text_width = dc.GetTextExtent(line)[0]
+                            dc.TextOut(x_center - text_width // 2, y_start, line)
+                            y_start += line_height
+
+                # Footer with variety name
+                dc.SelectObject(footer_font)
+                footer_text = f"Variety: {variety_name}"
+                footer_x = int(0.5 * dpi)
+                footer_y = page_height - int(0.3 * dpi)
+                dc.TextOut(footer_x, footer_y, footer_text)
+
+                dc.EndPage()
+                dc.EndDoc()
+                dc.DeleteDC()
+
+            return {'success': True, 'message': f'Back Sheet Label printed successfully ({quantity} copies)'}
+
+    except Exception as e:
+        print(f"Error printing back sheet: {str(e)}")
+        return {'success': False, 'error': str(e)}
+
+
+@app.route('/print-sheet-front-direct', methods=['POST'])
+def print_sheet_front_direct():
+    """Route handler for front sheet label printing"""
+    try:
+        data = request.get_json()
+        result = print_sheet_front_logic(data)
+       
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 500
+           
+    except Exception as e:
+        print(f"Error in front sheet route: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+
+
+
+# def print_sheet_front_logic(data):
+#     """Extract the core front sheet printing logic"""
+#     try:
+#         quantity = int(data.get('quantity', 1))
+#         env_multiplier = int(data.get('env_multiplier', 1))
+#         print(f"Environmental Multiplier: {env_multiplier}")
+#         quantity *= env_multiplier
+
+#         if CURRENT_USER.lower() == "ndefe":
+#             print(f"Printing {quantity} front sheet labels on Ndefe's printer")
+#             print(f"Variety Name: {data.get('variety_name')}")
+#             print(f"Crop: {data.get('crop')}")
+#             print(f"Days: {data.get('days')}")
+#             print(f"SKU Suffix: {data.get('sku_suffix')}")
+#             print(f"Pkg. size: {data.get('pkg_size')}")
+#             print(f"Env type: {data.get('env_type')}")
+#             print(f"Lot Code: {data.get('lot_code')}")
+#             print(f"Germination: {data.get('germination')}")
+#             print(f"For Year: {data.get('for_year')}")
+#             print(f"Quantity: {data.get('quantity')}")
+#             print(f"Desc1: {data.get('desc1')}")
+#             print(f"Desc2: {data.get('desc2')}")
+#             print(f"Desc3: {data.get('desc3')}")
+#             print(f"Rad type: {data.get('rad_type')}")
+#             print("================================")
+#             return {'success': True, 'message': f'Front Sheet Label printed successfully ({quantity} copies)'}
+#         else:
+#             # Gather label content (shared across copies) - same as single label logic
+#             variety_name = f"'{data.get('variety_name')}'"
+#             variety_crop = data.get('crop')
+#             days = data.get('days')
+#             env_type = data.get('env_type')
+#             year = data.get('for_year')
+#             days_year = f"{days}    Packed for 20{year}"
+
+#             desc_line1 = data.get('desc1')
+#             desc_line2 = data.get('desc2')
+#             desc_line3 = data.get('desc3')
+#             lot_code = data.get('lot_code')
+#             germination = data.get('germination')
+#             rad_type = data.get('rad_type')
+
+#             if env_type == "LG Coffee":
+#                 pkg_size = f"{data.get('pkg_size')} ••"
+#             elif env_type == "SM Coffee":
+#                 pkg_size = f"{data.get('pkg_size')} •"
+#             else:
+#                 pkg_size = data.get('pkg_size')
+
+#             pkg_lot_germ = f"{pkg_size}    Lot: {lot_code}    Germ: {germination}%"
+#             sku_suffix = data.get('sku_suffix')
+
+#             # Fonts (same as single label)
+#             # bold_12 = create_font("Times New Roman", 48, bold=True)
+#             # italic_9 = create_font("Times New Roman", 36, italic=True)
+#             # normal_8 = create_font("Times New Roman", 32)
+#             # bold_16 = create_font("Times New Roman", 60, bold=True)
+#             # normal_12 = create_font("Times New Roman", 40)
+#             # italic_12 = create_font("Times New Roman", 40, italic=True)
+#             # double font sizes
+#             bold_12 = create_font("Times New Roman", 96, bold=True)
+#             italic_9 = create_font("Times New Roman", 72, italic=True)
+#             normal_8 = create_font("Times New Roman", 64)
+#             bold_16 = create_font("Times New Roman", 120, bold=True)
+#             normal_12 = create_font("Times New Roman", 80)
+#             italic_12 = create_font("Times New Roman", 80, italic=True)
+
+
+#             printer_name = SHEET_PRINTER
+
+#             # Loop through each copy (same as single label approach)
+#             for i in range(quantity):
+#                 dc = win32ui.CreateDC()
+#                 dc.CreatePrinterDC(printer_name)
+
+#                 dc.StartDoc("Seed Label Sheet")
+#                 dc.StartPage()
+
+#                 # Get printer DPI and calculate sheet dimensions
+#                 dpi = dc.GetDeviceCaps(88)
+#                 page_width = dc.GetDeviceCaps(8)
+#                 page_height = dc.GetDeviceCaps(10)
+                
+#                 # Sheet layout: 3 columns x 10 rows = 30 labels
+#                 margin_y = int(0.5 * dpi)  # 0.5 inch top margin
+#                 label_width = page_width // 3
+#                 label_height = (page_height - margin_y) // 10
+                
+#                 # Column adjustments for better alignment
+#                 left_col_offset = int(0.05 * dpi)
+#                 middle_col_offset = 0
+#                 right_col_offset = int(-0.05 * dpi)
+#                 col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+
+#                 # Draw 30 labels (3 columns x 10 rows)
+#                 for row in range(10):
+#                     y_base = margin_y + (row * label_height)
+                    
+#                     for col in range(3):
+#                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
+#                         y_start = y_base + 20  # Start position within each label
+
+#                         # Use same conditional logic as single front label
+#                         if "pkt" in sku_suffix:
+#                             if not desc_line3:  # only 2 description lines
+#                                 dc.SelectObject(bold_12)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
+#                                 y_start += 55
+
+#                                 dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
+#                                 y_start += 58
+
+#                                 dc.SelectObject(italic_9)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line1)[0] // 2, y_start, desc_line1)
+#                                 y_start += 43
+
+#                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line2)[0] // 2, y_start, desc_line2)
+#                                 y_start += 50
+
+#                                 dc.SelectObject(normal_8)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(pkg_lot_germ)[0] // 2, y_start, pkg_lot_germ)
+#                                 y_start += 40
+
+#                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
+#                             else:  # 3 description lines
+#                                 dc.SelectObject(bold_12)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
+#                                 y_start += 55
+
+#                                 dc.SelectObject(italic_9)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line1)[0] // 2, y_start, desc_line1)
+#                                 y_start += 43
+
+#                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line2)[0] // 2, y_start, desc_line2)
+#                                 y_start += 43
+
+#                                 dc.TextOut(x_center - dc.GetTextExtent(desc_line3)[0] // 2, y_start, desc_line3)
+#                                 y_start += 50
+
+#                                 dc.SelectObject(normal_8)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(pkg_lot_germ)[0] // 2, y_start, pkg_lot_germ)
+#                                 y_start += 40
+
+#                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
+#                         else:
+#                             lot_germ = f"Lot: {lot_code}    Germ: {germination}%"
+#                             if not desc_line3:
+#                                 if not rad_type:
+#                                     dc.SelectObject(bold_16)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
+#                                     y_start += 69
+
+#                                     dc.SelectObject(normal_12)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
+#                                     y_start += 54
+
+#                                     dc.SelectObject(bold_12)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(pkg_size)[0] // 2, y_start, pkg_size)
+#                                     y_start += 65
+
+#                                     dc.SelectObject(normal_12)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(lot_germ)[0] // 2, y_start, lot_germ)
+#                                     y_start += 48
+
+#                                     dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
+#                                 else:
+#                                     pkg_days = f"{pkg_size} -- {days}"
+#                                     lot_germ_year = f"Lot: {lot_code}    Germ: {germination}%    Packed for: {year}"
+
+#                                     dc.SelectObject(bold_16)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
+#                                     y_start += 64
+
+#                                     dc.SelectObject(italic_12)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(rad_type)[0] // 2, y_start, rad_type)
+#                                     y_start += 55
+
+#                                     dc.SelectObject(normal_12)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
+#                                     y_start += 50
+
+#                                     dc.SelectObject(bold_12)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(pkg_days)[0] // 2, y_start, pkg_days)
+#                                     y_start += 60
+
+#                                     dc.SelectObject(normal_12)
+#                                     dc.TextOut(x_center - dc.GetTextExtent(lot_germ_year)[0] // 2, y_start, lot_germ_year)
+#                             else:
+#                                 dc.SelectObject(bold_16)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
+#                                 y_start += 80
+
+#                                 dc.SelectObject(bold_12)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(pkg_size)[0] // 2, y_start, pkg_size)
+#                                 y_start += 75
+
+#                                 dc.SelectObject(normal_12)
+#                                 dc.TextOut(x_center - dc.GetTextExtent(lot_germ)[0] // 2, y_start, lot_germ)
+#                                 y_start += 60
+
+#                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
+
+#                 # Add envelope info at bottom of sheet
+#                 envelope = f"Envelope: {env_type}"
+#                 envelope_font = create_font("Times New Roman", 48, bold=True)
+#                 dc.SelectObject(envelope_font)
+#                 envelope_x = int(0.5 * dpi)
+#                 envelope_y = page_height - int(0.3 * dpi)
+#                 dc.TextOut(envelope_x, envelope_y, envelope)
+
+#                 dc.EndPage()
+#                 dc.EndDoc()
+#                 dc.DeleteDC()
+
+#             return {'success': True, 'message': f'Front Sheet Label printed successfully ({quantity} copies)'}
+
+#     except Exception as e:
+#         print(f"Error printing front sheet: {str(e)}")
+#         return {'success': False, 'error': str(e)}
+
+
+
+
 
 # [CONFIRMED WORKING]
 def print_sheet_back_logic(data):
