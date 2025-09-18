@@ -558,7 +558,7 @@ def print_sheet_front_logic(data):
                     
                     for col in range(3):
                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
-                        y_start = y_base - 70 
+                        y_start = y_base - 75 
 
                         # Use same conditional logic as single front label
                         if "pkt" in sku_suffix:
