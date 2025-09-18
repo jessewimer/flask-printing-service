@@ -699,7 +699,7 @@ def print_sheet_front_logic(data):
         print(f"Error printing front sheet: {str(e)}")
         return {'success': False, 'error': str(e)}
 
-
+#This should be working now
 def print_sheet_back_logic(data):
     """Extract the core back sheet printing logic"""
     try:
