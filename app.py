@@ -392,6 +392,7 @@ def print_single_back_label_logic(data):
 
                 # Label size: 1" x 2.625" at 300 DPI
                 dpi = dc.GetDeviceCaps(88)
+                print(f"[DEBUG] Printer DPI: {dpi}")
                 label_width = int(2.625 * dpi)
                 label_height = int(1.0 * dpi)
                 x_center = label_width // 2
@@ -531,12 +532,20 @@ def print_sheet_front_logic(data):
             sku_suffix = data.get('sku_suffix')
 
             # Fonts (same as single label)
-            bold_12 = create_font("Times New Roman", 48, bold=True)
-            italic_9 = create_font("Times New Roman", 36, italic=True)
-            normal_8 = create_font("Times New Roman", 32)
-            bold_16 = create_font("Times New Roman", 60, bold=True)
-            normal_12 = create_font("Times New Roman", 40)
-            italic_12 = create_font("Times New Roman", 40, italic=True)
+            # bold_12 = create_font("Times New Roman", 48, bold=True)
+            # italic_9 = create_font("Times New Roman", 36, italic=True)
+            # normal_8 = create_font("Times New Roman", 32)
+            # bold_16 = create_font("Times New Roman", 60, bold=True)
+            # normal_12 = create_font("Times New Roman", 40)
+            # italic_12 = create_font("Times New Roman", 40, italic=True)
+            # double font sizes
+            bold_12 = create_font("Times New Roman", 96, bold=True)
+            italic_9 = create_font("Times New Roman", 72, italic=True)
+            normal_8 = create_font("Times New Roman", 64)
+            bold_16 = create_font("Times New Roman", 120, bold=True)
+            normal_12 = create_font("Times New Roman", 80)
+            italic_12 = create_font("Times New Roman", 80, italic=True)
+
 
             printer_name = SHEET_PRINTER
 
@@ -730,8 +739,8 @@ def print_sheet_back_logic(data):
                 return {'success': False, 'message': 'No back lines provided'}
 
             # Font (same as single back label)
-            font = create_font("Book Antiqua", 32, italic=True)
-            footer_font = create_font("Calibri", 40)
+            font = create_font("Book Antiqua", 66, italic=True)
+            footer_font = create_font("Calibri", 80)
 
             printer_name = SHEET_PRINTER
 
@@ -745,25 +754,34 @@ def print_sheet_back_logic(data):
 
                 # Get printer DPI and calculate sheet dimensions
                 dpi = dc.GetDeviceCaps(88)
+                # print(f"Printer DPI: {dpi}")
                 page_width = dc.GetDeviceCaps(8)
                 page_height = dc.GetDeviceCaps(10)
+
                 
                 # Sheet layout: 3 columns x 10 rows = 30 labels
                 margin_y = int(0.5 * dpi)
                 label_width = page_width // 3
-                label_height = (page_height - margin_y) // 10
+                label_height = (page_height - margin_y) // 10 - 7
                 
                 # Column adjustments for better alignment
-                left_col_offset = int(0.05 * dpi)
+                # left_col_offset = int(0.05 * dpi)
+                # middle_col_offset = 0
+                # right_col_offset = int(-0.05 * dpi)
+                left_col_offset = -35
                 middle_col_offset = 0
-                right_col_offset = int(-0.05 * dpi)
+                right_col_offset = 35
                 col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
 
                 dc.SelectObject(font)
 
                 # Spacing logic (same as single back label)
                 num_lines = len(back_lines)
-                line_height = 39  # Exact same as single back label
+                # if back line 7 is not present, increase line height to spread out
+                if len(back_lines) < 7:
+                    line_height = 90
+                else:
+                    line_height = 80  # Exact same as single back label
                 total_text_height = line_height * num_lines
 
                 # Draw 30 labels (3 columns x 10 rows)
@@ -775,7 +793,7 @@ def print_sheet_back_logic(data):
                         
                         # Calculate y_start (same logic as single back label)
                         remaining_space = label_height - total_text_height
-                        y_start = y_base + (remaining_space // 2) + 12
+                        y_start = y_base + (remaining_space // 2) - 100
 
                         # Draw each back line (same as single back label)
                         for line in back_lines:
