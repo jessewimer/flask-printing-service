@@ -21,7 +21,8 @@ from reportlab.pdfgen import canvas
 import textwrap
 from datetime import datetime
 import math
-
+from reportlab.lib.enums import TA_CENTER
+import tempfile
 
 pdfmetrics.registerFont(TTFont('Calibri', 'C:/Windows/Fonts/calibri.ttf')) 
 pdfmetrics.registerFont(TTFont("Calibri-Bold", 'C:/Windows/Fonts/calibrib.ttf'))
@@ -1773,6 +1774,275 @@ def print_range():
             'success': False,
             'error': str(e)
         }), 500
+
+
+
+
+
+
+
+
+
+
+
+@app.route('/print-envelope-table', methods=['POST'])
+def print_envelope_table():
+    """
+    Receive envelope data and either print to console or create PDF and print
+    """
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data received'
+            }), 400
+        
+        print(f"Received envelope data for printing from user: {CURRENT_USER}")
+        print(f"Data keys: {list(data.keys())}")
+        
+        # Extract envelope data
+        envelope_data_by_year = data.get('envelope_data_by_year', {})
+        years = data.get('years', [])
+        grand_total = data.get('grand_total', 0)
+        envelope_types = data.get('envelope_types', [])
+        report_title = data.get('report_title', 'Envelope Usage Report')
+        
+        if not envelope_data_by_year:
+            return jsonify({
+                'success': False,
+                'error': 'No envelope data found'
+            }), 400
+        
+        # Check current user and handle accordingly
+        if CURRENT_USER.lower() == "ndefe":
+            print_console_table(envelope_data_by_year, years, grand_total, report_title)
+            return jsonify({
+                'success': True,
+                'message': 'Table printed to console',
+                'user': CURRENT_USER
+            }), 200
+        else:
+            return create_and_print_pdf(envelope_data_by_year, years, grand_total, envelope_types, report_title)
+            
+    except Exception as e:
+        print(f"Error in print_envelope_table: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+def print_console_table(envelope_data_by_year, years, grand_total, report_title):
+    """
+    Print a nicely formatted table to the console for ndefe user
+    """
+    print("\n" + "="*80)
+    print(f"{report_title:^80}")
+    print("="*80)
+    print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Grand Total Envelopes: {grand_total:,}")
+    print("="*80)
+    
+    # Get all unique envelope types across all years
+    all_envelope_types = set()
+    for year_data in envelope_data_by_year.values():
+        all_envelope_types.update(year_data['envelope_counts'].keys())
+    all_envelope_types = sorted(all_envelope_types)
+    
+    # Create header
+    header = ["Envelope Type"] + [str(year) for year in sorted(years)] + ["Total"]
+    
+    # Calculate column widths
+    max_type_width = max(len("Envelope Type"), max(len(env_type) for env_type in all_envelope_types) if all_envelope_types else 0)
+    year_width = 10
+    total_width = 12
+    
+    # Print header
+    print(f"{'Envelope Type':<{max_type_width}} ", end="")
+    for year in sorted(years):
+        print(f"{str(year):>{year_width}} ", end="")
+    print(f"{'Total':>{total_width}}")
+    
+    # Print separator
+    print("-" * (max_type_width + len(years) * (year_width + 1) + total_width + 1))
+    
+    # Print data rows
+    for env_type in all_envelope_types:
+        row_total = 0
+        print(f"{env_type:<{max_type_width}} ", end="")
+        
+        for year in sorted(years):
+            year_str = str(year)
+            count = envelope_data_by_year.get(year_str, {}).get('envelope_counts', {}).get(env_type, 0)
+            row_total += count
+            print(f"{count:>{year_width},} ", end="")
+        
+        print(f"{row_total:>{total_width},}")
+    
+    # Print totals row
+    print("-" * (max_type_width + len(years) * (year_width + 1) + total_width + 1))
+    print(f"{'TOTAL':<{max_type_width}} ", end="")
+    
+    for year in sorted(years):
+        year_str = str(year)
+        year_total = envelope_data_by_year.get(year_str, {}).get('total', 0)
+        print(f"{year_total:>{year_width},} ", end="")
+    
+    print(f"{grand_total:>{total_width},}")
+    print("="*80)
+    print()
+
+def create_and_print_pdf(envelope_data_by_year, years, grand_total, envelope_types, report_title):
+    """
+    Create a PDF report and print it
+    """
+    # Create temporary file
+    temp_file = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
+    file_path = temp_file.name
+    temp_file.close()
+    
+    try:
+        # Create PDF document
+        doc = SimpleDocTemplate(file_path, pagesize=letter,
+                              rightMargin=72, leftMargin=72,
+                              topMargin=72, bottomMargin=18)
+        
+        # Container for the 'Flowable' objects
+        elements = []
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=30,
+            alignment=TA_CENTER
+        )
+        
+        # Title
+        title = Paragraph(report_title, title_style)
+        elements.append(title)
+        
+        # Subtitle with generation info
+        subtitle_text = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Grand Total: {grand_total:,} Envelopes"
+        subtitle = Paragraph(subtitle_text, styles['Normal'])
+        elements.append(subtitle)
+        elements.append(Spacer(1, 20))
+        
+        # Prepare table data
+        sorted_years = sorted(years)
+        sorted_envelope_types = sorted(envelope_types)
+        
+        # Table header
+        table_data = [["Envelope Type"] + [str(year) for year in sorted_years] + ["Total"]]
+        
+        # Table rows
+        for env_type in sorted_envelope_types:
+            row = [env_type]
+            row_total = 0
+            
+            for year in sorted_years:
+                year_str = str(year)
+                count = envelope_data_by_year.get(year_str, {}).get('envelope_counts', {}).get(env_type, 0)
+                row.append(f"{count:,}")
+                row_total += count
+            
+            row.append(f"{row_total:,}")
+            table_data.append(row)
+        
+        # Totals row
+        totals_row = ["TOTAL"]
+        for year in sorted_years:
+            year_str = str(year)
+            year_total = envelope_data_by_year.get(year_str, {}).get('total', 0)
+            totals_row.append(f"{year_total:,}")
+        totals_row.append(f"{grand_total:,}")
+        table_data.append(totals_row)
+        
+        # Create table
+        table = Table(table_data)
+        
+        # Table styling
+        table_style = TableStyle([
+            # Header row
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            
+            # Data rows
+            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -2), 9),
+            ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),  # Right align numbers
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),   # Left align envelope types
+            
+            # Totals row
+            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 10),
+            
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            
+            # Alternating row colors (excluding header and total)
+            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.beige, colors.white])
+        ])
+        
+        table.setStyle(table_style)
+        elements.append(table)
+        
+        # Build PDF
+        doc.build(elements)
+        print(f"PDF created successfully: {file_path}")
+        
+        # Print the PDF
+        if CURRENT_USER.lower() != "ndefe":
+            try:
+                command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{file_path}"'
+                subprocess.run(command, check=True, shell=True)
+                print(f"Successfully printed envelope report")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'PDF created and sent to printer successfully',
+                    'filename': os.path.basename(file_path)
+                }), 200
+                
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to print envelope report: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to print: {str(e)}'
+                }), 500
+            except Exception as e:
+                print(f"Failed to print envelope report: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to print: {str(e)}'
+                }), 500
+        
+    except Exception as e:
+        print(f"Error creating PDF: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to create PDF: {str(e)}'
+        }), 500
+    
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                print(f"Temporary file {file_path} deleted.")
+            except Exception as e:
+                print(f"Warning: Could not delete temporary file {file_path}: {e}")
+
+
 
 
 
