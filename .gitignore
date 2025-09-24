@@ -13,3 +13,10 @@ instance/
 
 # PDF files
 pdfs/
+
+run_flask.bat
+run_flask.vbs
+
+# log files
+*.log
+task_log.txt
