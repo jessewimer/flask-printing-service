@@ -2045,6 +2045,63 @@ def create_and_print_pdf(envelope_data_by_year, years, grand_total, envelope_typ
 
 
 
+@app.route('/print-address-labels', methods=['POST'])
+def print_address_labels():
+    """
+    Print address labels PDF
+    """
+    try:
+        print(f"Address labels print request from user: {CURRENT_USER}")
+        
+        # Check current user and handle accordingly
+        if CURRENT_USER.lower() == "ndefe":
+            print("Printing address labels")
+            return jsonify({
+                'success': True,
+                'message': 'Address labels printed to console',
+                'user': CURRENT_USER
+            }), 200
+        else:
+            # Print the PDF using Sumatra
+            pdf_path = "assets/address_labels.pdf"
+            
+            # Check if PDF exists
+            if not os.path.exists(pdf_path):
+                return jsonify({
+                    'success': False,
+                    'error': f'Address labels PDF not found at {pdf_path}'
+                }), 404
+            
+            try:
+                command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{pdf_path}"'
+                subprocess.run(command, check=True, shell=True)
+                print(f"Successfully printed address labels from {pdf_path}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Address labels sent to printer successfully',
+                    'user': CURRENT_USER
+                }), 200
+                
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to print address labels: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to print: {str(e)}'
+                }), 500
+            except Exception as e:
+                print(f"Failed to print address labels: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Print error: {str(e)}'
+                }), 500
+            
+    except Exception as e:
+        print(f"Error in print_address_labels: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
 
 
 
