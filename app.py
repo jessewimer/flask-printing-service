@@ -2201,13 +2201,13 @@ def print_stock_seed_label():
                 label_height = int(1.0 * dpi)
                 x_center = label_width // 2
                 
-                # Create bold font for all text
-                bold_font = create_font("Times New Roman", 44, bold=True)
+                # Create bigger bold font to fill the label better
+                bold_font = create_font("Times New Roman", 60, bold=True)
                 dc.SelectObject(bold_font)
                 
-                # Starting Y position
-                y_start = 30
-                line_height = 55  # Spacing between lines
+                # Starting Y position - adjusted for bigger font
+                y_start = 20
+                line_height = 65  # Increased spacing for bigger font
                 
                 # Line 1: "* STOCK SEED *"
                 header_text = "* STOCK SEED *"
