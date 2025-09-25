@@ -2105,47 +2105,6 @@ def print_address_labels():
 
 
 
-
-# @app.route('/print-stock-seed-label', methods=['POST'])
-# def print_stock_seed_label():
-#     """
-#     Handle stock seed label printing requests
-#     For now, just prints the data to console
-#     """
-#     try:
-#         data = request.get_json()
-        
-#         if not data:
-#             return jsonify({'error': 'No data provided'}), 400
-        
-#         # Extract the data
-#         variety = data.get('variety', 'Unknown')
-#         veg_type = data.get('veg_type', 'Unknown') 
-#         lot_number = data.get('lot_number', 'Unknown')
-#         quantity = data.get('quantity', 'Unknown')
-        
-#         # Print to console for now
-#         print("\n" + "="*50)
-#         print("STOCK SEED LABEL PRINT REQUEST")
-#         print("="*50)
-#         print(f"Variety: {variety}")
-#         print(f"Vegetable Type: {veg_type}")
-#         print(f"Lot Number: {lot_number}")
-#         print(f"Quantity Saved: {quantity}")
-#         print("="*50 + "\n")
-        
-#         # Log the full data for debugging
-#         print(f"Full data received: {data}")
-        
-#         return jsonify({
-#             'success': True,
-#             'message': 'Stock seed label data received and printed to console'
-#         })
-        
-#     except Exception as e:
-#         print(f"Error processing stock seed label request: {str(e)}")
-#         return jsonify({'error': str(e)}), 500
-
 @app.route('/print-stock-seed-label', methods=['POST'])
 def print_stock_seed_label():
     """
@@ -2201,13 +2160,13 @@ def print_stock_seed_label():
                 label_height = int(1.0 * dpi)
                 x_center = label_width // 2
                 
-                # Create bigger bold font to fill the label better
-                bold_font = create_font("Times New Roman", 60, bold=True)
+                # Create bold font at size 54
+                bold_font = create_font("Times New Roman", 54, bold=True)
                 dc.SelectObject(bold_font)
                 
-                # Starting Y position - adjusted for bigger font
+                # Starting Y position
                 y_start = 20
-                line_height = 65  # Increased spacing for bigger font
+                line_height = 70  # Increased spacing between rows
                 
                 # Line 1: "* STOCK SEED *"
                 header_text = "* STOCK SEED *"
@@ -2225,9 +2184,10 @@ def print_stock_seed_label():
                 dc.TextOut(x_center - text_width // 2, y_start, veg_type)
                 y_start += line_height
                 
-                # Line 4: Lot number
-                text_width = dc.GetTextExtent(lot_number)[0]
-                dc.TextOut(x_center - text_width // 2, y_start, lot_number)
+                # Line 4: "Lot: " + lot number
+                lot_text = f"Lot: {lot_number}"
+                text_width = dc.GetTextExtent(lot_text)[0]
+                dc.TextOut(x_center - text_width // 2, y_start, lot_text)
                 
                 # Finalize print job
                 dc.EndPage()
