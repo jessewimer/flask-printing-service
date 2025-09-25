@@ -2105,5 +2105,49 @@ def print_address_labels():
 
 
 
+
+@app.route('/print-stock-seed-label', methods=['POST'])
+def print_stock_seed_label():
+    """
+    Handle stock seed label printing requests
+    For now, just prints the data to console
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Extract the data
+        variety = data.get('variety', 'Unknown')
+        veg_type = data.get('veg_type', 'Unknown') 
+        lot_number = data.get('lot_number', 'Unknown')
+        quantity = data.get('quantity', 'Unknown')
+        
+        # Print to console for now
+        print("\n" + "="*50)
+        print("STOCK SEED LABEL PRINT REQUEST")
+        print("="*50)
+        print(f"Variety: {variety}")
+        print(f"Vegetable Type: {veg_type}")
+        print(f"Lot Number: {lot_number}")
+        print(f"Quantity Saved: {quantity}")
+        print("="*50 + "\n")
+        
+        # Log the full data for debugging
+        print(f"Full data received: {data}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Stock seed label data received and printed to console'
+        })
+        
+    except Exception as e:
+        print(f"Error processing stock seed label request: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+
+
 if __name__ == "__main__":
     app.run(port=5000, debug=True)  # Debug=True helps while testing
