@@ -2106,11 +2106,50 @@ def print_address_labels():
 
 
 
+# @app.route('/print-stock-seed-label', methods=['POST'])
+# def print_stock_seed_label():
+#     """
+#     Handle stock seed label printing requests
+#     For now, just prints the data to console
+#     """
+#     try:
+#         data = request.get_json()
+        
+#         if not data:
+#             return jsonify({'error': 'No data provided'}), 400
+        
+#         # Extract the data
+#         variety = data.get('variety', 'Unknown')
+#         veg_type = data.get('veg_type', 'Unknown') 
+#         lot_number = data.get('lot_number', 'Unknown')
+#         quantity = data.get('quantity', 'Unknown')
+        
+#         # Print to console for now
+#         print("\n" + "="*50)
+#         print("STOCK SEED LABEL PRINT REQUEST")
+#         print("="*50)
+#         print(f"Variety: {variety}")
+#         print(f"Vegetable Type: {veg_type}")
+#         print(f"Lot Number: {lot_number}")
+#         print(f"Quantity Saved: {quantity}")
+#         print("="*50 + "\n")
+        
+#         # Log the full data for debugging
+#         print(f"Full data received: {data}")
+        
+#         return jsonify({
+#             'success': True,
+#             'message': 'Stock seed label data received and printed to console'
+#         })
+        
+#     except Exception as e:
+#         print(f"Error processing stock seed label request: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+
 @app.route('/print-stock-seed-label', methods=['POST'])
 def print_stock_seed_label():
     """
     Handle stock seed label printing requests
-    For now, just prints the data to console
     """
     try:
         data = request.get_json()
@@ -2124,29 +2163,92 @@ def print_stock_seed_label():
         lot_number = data.get('lot_number', 'Unknown')
         quantity = data.get('quantity', 'Unknown')
         
-        # Print to console for now
-        print("\n" + "="*50)
-        print("STOCK SEED LABEL PRINT REQUEST")
-        print("="*50)
-        print(f"Variety: {variety}")
-        print(f"Vegetable Type: {veg_type}")
-        print(f"Lot Number: {lot_number}")
-        print(f"Quantity Saved: {quantity}")
-        print("="*50 + "\n")
-        
-        # Log the full data for debugging
-        print(f"Full data received: {data}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Stock seed label data received and printed to console'
-        })
+        if CURRENT_USER.lower() == "ndefe":
+            # Print to console for ndefe user
+            print("\n" + "="*50)
+            print("STOCK SEED LABEL PRINT REQUEST")
+            print("="*50)
+            print(f"Variety: {variety}")
+            print(f"Vegetable Type: {veg_type}")
+            print(f"Lot Number: {lot_number}")
+            print(f"Quantity Saved: {quantity}")
+            print("="*50 + "\n")
+            
+            # Log the full data for debugging
+            print(f"Full data received: {data}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Stock seed label data received and printed to console'
+            })
+        else:
+            # Print actual label for other users
+            try:
+                # Format the variety name with single quotes
+                variety_formatted = f"'{variety}'"
+                
+                # Setup printer
+                printer_name = ROLL_PRINTER
+                dc = win32ui.CreateDC()
+                dc.CreatePrinterDC(printer_name)
+                
+                dc.StartDoc("Stock Seed Label")
+                dc.StartPage()
+                
+                # Label dimensions - same as your other labels
+                dpi = dc.GetDeviceCaps(88)
+                label_width = int(2.625 * dpi)
+                label_height = int(1.0 * dpi)
+                x_center = label_width // 2
+                
+                # Create bold font for all text
+                bold_font = create_font("Times New Roman", 44, bold=True)
+                dc.SelectObject(bold_font)
+                
+                # Starting Y position
+                y_start = 30
+                line_height = 55  # Spacing between lines
+                
+                # Line 1: "* STOCK SEED *"
+                header_text = "* STOCK SEED *"
+                text_width = dc.GetTextExtent(header_text)[0]
+                dc.TextOut(x_center - text_width // 2, y_start, header_text)
+                y_start += line_height
+                
+                # Line 2: Variety name in single quotes
+                text_width = dc.GetTextExtent(variety_formatted)[0]
+                dc.TextOut(x_center - text_width // 2, y_start, variety_formatted)
+                y_start += line_height
+                
+                # Line 3: Vegetable type
+                text_width = dc.GetTextExtent(veg_type)[0]
+                dc.TextOut(x_center - text_width // 2, y_start, veg_type)
+                y_start += line_height
+                
+                # Line 4: Lot number
+                text_width = dc.GetTextExtent(lot_number)[0]
+                dc.TextOut(x_center - text_width // 2, y_start, lot_number)
+                
+                # Finalize print job
+                dc.EndPage()
+                dc.EndDoc()
+                dc.DeleteDC()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Stock seed label printed successfully'
+                })
+                
+            except Exception as print_error:
+                print(f"Error printing stock seed label: {str(print_error)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Printing failed: {str(print_error)}'
+                }), 500
         
     except Exception as e:
         print(f"Error processing stock seed label request: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
-
 
 
 if __name__ == "__main__":
