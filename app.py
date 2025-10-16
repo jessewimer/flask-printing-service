@@ -173,6 +173,7 @@ def print_single_front_label_logic(data):
             print(f"Crop: {data.get('crop')}")
             print(f"Days: {data.get('days')}")
             print(f"SKU Suffix: {data.get('sku_suffix')}")
+            print(f"Common name: {data.get('common_name')}")
             print(f"Pkg. size: {data.get('pkg_size')}")
             print(f"Env type: {data.get('env_type')}")
             print(f"Lot Code: {data.get('lot_code')}")
@@ -188,7 +189,11 @@ def print_single_front_label_logic(data):
         else:
             # Gather label content (shared across copies)
             variety_name = f"'{data.get('variety_name')}'"
-            variety_crop = data.get('crop')
+           
+            # Check for common_name first, fall back to crop if empty
+            common_name = data.get('common_name', '').strip()
+            variety_crop = common_name if common_name else data.get('crop')
+
             days = data.get('days')
             env_type = data.get('env_type')
             year = data.get('for_year')
@@ -480,6 +485,7 @@ def print_sheet_front_logic(data):
             print(f"Crop: {data.get('crop')}")
             print(f"Days: {data.get('days')}")
             print(f"SKU Suffix: {data.get('sku_suffix')}")
+            print(f"Common name: {data.get('common_name')}")
             print(f"Pkg. size: {data.get('pkg_size')}")
             print(f"Env type: {data.get('env_type')}")
             print(f"Lot Code: {data.get('lot_code')}")
@@ -495,7 +501,11 @@ def print_sheet_front_logic(data):
         else:
             # Gather label content (shared across copies) - same as single label logic
             variety_name = f"'{data.get('variety_name')}'"
-            variety_crop = data.get('crop')
+            
+            # Check for common_name first, fall back to crop if empty
+            common_name = data.get('common_name', '').strip()
+            variety_crop = common_name if common_name else data.get('crop')
+            
             days = data.get('days')
             env_type = data.get('env_type')
             year = data.get('for_year')
