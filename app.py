@@ -1040,7 +1040,7 @@ def print_items_to_pull():
             }), 400
         
         # Create pdfs directory if it doesn't exist
-        pdf_dir = 'pdfs'
+        pdf_dir = 'packing_slips'
         os.makedirs(pdf_dir, exist_ok=True)
         
         # Generate filename with current date
@@ -1228,7 +1228,7 @@ def reprocess_order():
 def generate_pdf(order_number, order, action):
     # from process_orders import separate_pkts_and_bulk, sort_lineitems
     filename = f"{order_number}.pdf"
-    file_path = f"pdfs/{filename}"    
+    file_path = f"packing_slips/{filename}"    
 
     sorted_misc_list = order.get("misc_items", [])
     sorted_bulk_list = order.get("bulk_items", [])
@@ -1656,7 +1656,7 @@ def generate_pdf(order_number, order, action):
 
     elif action == "view":
     
-        file_path = os.path.abspath(f"pdfs/{order['order_number']}.pdf")  # Fixed
+        file_path = os.path.abspath(f"packing_slips/{order['order_number']}.pdf")  # Fixed
         os.startfile(file_path)  # This works on Windows only
 
     return
@@ -2219,6 +2219,559 @@ def print_stock_seed_label():
     except Exception as e:
         print(f"Error processing stock seed label request: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/print-pick-list', methods=['POST'])
+def print_pick_list():
+    """
+    Handle pick list printing for store orders
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        order_id = data.get('order_id')
+        order_number = data.get('order_number', 'Unknown')
+        store_name = data.get('store_name', 'Unknown')
+        items = data.get('items', [])
+        
+        if not items:
+            return jsonify({'success': False, 'error': 'No items provided'}), 400
+        
+        # Generate the PDF (regardless of user)
+        filename = f"pick_list_{order_number}.pdf"
+        filepath = os.path.join("store_pick_lists", filename)
+        
+        # Ensure directory exists
+        os.makedirs("store_pick_lists", exist_ok=True)
+        
+        # Create the pick list PDF
+        generate_pick_list_pdf(filepath, order_number, store_name, items)
+        
+        if CURRENT_USER.lower() == "ndefe":
+            print(f"\nPick list saved to {filepath}")
+            return jsonify({
+                'success': True,
+                'message': f'Pick list PDF created at {filepath} (printing skipped for ndefe)'
+            })
+        else:
+            # Print using Sumatra
+            try:
+                command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{filepath}"'
+                subprocess.run(command, check=True, shell=True)
+                print(f"Successfully printed pick list {filename}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Pick list for {len(items)} items sent to printer'
+                })
+            except Exception as e:
+                print(f"Failed to print pick list {filename}: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to print: {str(e)}'
+                }), 500
+            finally:
+                # Clean up the file
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                    print(f"Temporary file {filename} deleted.")
+        
+    except Exception as e:
+        print(f"Error printing pick list: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+def generate_pick_list_pdf(filepath, order_number, store_name, items):
+    """
+    Generate a pick list PDF using ReportLab Platypus
+    """
+    from reportlab.lib.styles import ParagraphStyle, TA_RIGHT
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    
+    # Create PDF document
+    doc = SimpleDocTemplate(filepath, pagesize=LETTER,
+                            leftMargin=40, rightMargin=40,
+                            topMargin=40, bottomMargin=40)
+    
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Custom styles
+    header_style = ParagraphStyle(
+        name="HeaderBigBold",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=16,
+        spaceAfter=6,
+    )
+    
+    small_right = ParagraphStyle(
+        name="RightSmall",
+        parent=styles["Normal"],
+        fontSize=12,
+        alignment=TA_RIGHT,
+    )
+    
+    # First row: Order Number + Store Name (big and bold), Date (right-aligned)
+    left_header = Paragraph(f"{order_number} &nbsp;&nbsp;&nbsp; {store_name}", header_style)
+    right_header = Paragraph(
+        f"{datetime.now().strftime('%Y-%m-%d')}",
+        small_right
+    )
+    
+    # Header table to align them on the same row
+    header_table = Table(
+        [[left_header, right_header]],
+        colWidths=[400, 130]
+    )
+    header_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    
+    elements = [header_table, Spacer(1, 12)]
+    
+    # Check if any items have photos
+    has_photos = any(item.get('has_photo', False) for item in items)
+    
+    # Build table data
+    headers = ["Seed", "Qty", "Variety", "Type"]
+    if has_photos:
+        headers.insert(1, "Photo")
+    
+    data = [headers]
+    
+    for item in items:
+        row = [""]  # Seed checkbox column
+        
+        if has_photos:
+            # Show checkmark if photo is NOT needed, empty if photo IS needed
+            row.append("✓" if not item.get('has_photo', False) else "")
+        
+        row.append(str(item.get('quantity', 0)))
+        row.append(item.get('variety_name', 'Unknown'))
+        row.append(item.get('veg_type', 'Unknown'))
+        
+        data.append(row)
+    
+    # Table column widths
+    if has_photos:
+        col_widths = [50, 50, 50, 230, 150]
+    else:
+        col_widths = [50, 50, 230, 150]
+    
+    # Create the table
+    table = Table(data, colWidths=col_widths, repeatRows=1, hAlign='LEFT')
+    
+    # Table style
+    style = TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Center seed checkbox column
+        ('ALIGN', (1 if not has_photos else 2, 0), (1 if not has_photos else 2, -1), 'CENTER'),  # Center Qty column
+        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey)
+    ])
+    
+    if has_photos:
+        style.add('ALIGN', (1, 0), (1, -1), 'CENTER')  # Center Photo column
+    
+    # Shade every other row
+    for i in range(1, len(data)):
+        if i % 2 == 1:
+            style.add('BACKGROUND', (0, i), (-1, i), colors.whitesmoke)
+    
+    table.setStyle(style)
+    elements.append(table)
+    
+    # Build the PDF
+    doc.build(elements)
+    print(f"Pick list PDF created: {filepath}")
+
+
+
+@app.route('/print-store-order-invoice', methods=['POST'])
+def print_store_order_invoice():
+    """
+    Handle invoice printing for finalized store orders
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        order = data.get('order', {})
+        store = data.get('store', {})
+        items = data.get('items', [])
+        
+        print("\n=== FLASK INVOICE DEBUG START ===")
+        print(f"Order data received: {order}")
+        print(f"Credit in order dict: {order.get('credit', 'NOT FOUND')}")
+        print("=== FLASK INVOICE DEBUG END ===\n")
+        
+        if not order or not store or not items:
+            return jsonify({'success': False, 'error': 'Incomplete order data'}), 400
+        
+        # Generate the PDF (regardless of user)
+        order_number = order.get('order_number', 'Unknown')
+        
+        # Generate the invoice
+        generate_store_invoice_pdf(order, store, items)
+        
+        if CURRENT_USER.lower() == "ndefe":
+            print(f"\nStore invoice generated for {store.get('store_name')} - Order {order_number}")
+            return jsonify({
+                'success': True,
+                'message': f'Invoice PDF created (printing skipped for ndefe)'
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'message': f'Invoice for order {order_number} sent to printer'
+            })
+        
+    except Exception as e:
+        print(f"Error printing store order invoice: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+def generate_store_invoice_pdf(order, store, items):
+    """
+    Generate store invoice PDF using BaseDocTemplate approach
+    """
+    from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, NextPageTemplate
+    from datetime import datetime, timedelta 
+
+    print("\n=== PDF GENERATION DEBUG START ===")
+    print(f"Order dict in PDF generation: {order}")
+    
+    # Calculate order financials
+    shipping = float(order.get('shipping', 0))
+    credit = float(order.get('credit', 0))
+    
+    print(f"Shipping: {shipping}")
+    print(f"Credit extracted: {credit}")
+    print("=== PDF GENERATION DEBUG END ===\n")
+
+    # Dictionary access (correct way)
+    store_address = store.get('address', '')      
+    store_address2 = store.get('address2', '')    
+    store_city = store.get('city', '')            
+    store_state = store.get('state', '')          
+    store_zip = store.get('zip', '')              
+
+    # Setup file path
+    order_number = order.get('order_number', 'Unknown')
+    store_name = store.get('store_name', 'Unknown').replace('/', '-')
+    file_path = f"store_invoices/{store_name}_{order_number}.pdf"
+    
+    # Ensure directory exists
+    os.makedirs("store_invoices", exist_ok=True)
+
+    width, height = LETTER
+    styles = getSampleStyleSheet()
+    
+    # Calculate pagination based on item count
+    item_count = len(items)
+    if item_count <= 25:
+        num_pages = 1
+    elif item_count <= 62:
+        num_pages = 2
+    elif item_count <= 99:
+        num_pages = 3
+    elif item_count <= 136:
+        num_pages = 4
+    elif item_count <= 173:
+        num_pages = 5
+    elif item_count <= 210:
+        num_pages = 6
+    elif item_count <= 247:
+        num_pages = 7
+    else:
+        num_pages = 8
+
+    # Build table data - NEW COLUMN ORDER
+    data = [["Qty", "Variety", "Type", "Unit Price", "Extended"]]
+    subtotal = 0
+    for item in items:
+        variety = item.get('variety_name', 'Unknown')
+        crop = item.get('veg_type', 'Unknown')
+        quantity = item.get('quantity', 0)
+        price = float(item.get('price', 0))
+        line_total = quantity * price
+        subtotal += line_total
+        
+        data.append([
+            str(quantity),
+            variety,
+            crop,
+            f"${price:.2f}",
+            f"${line_total:.2f}"
+        ])
+    
+    # Create table with adjusted column widths
+    table = Table(data, colWidths=[40, 193, 135, 70, 70], repeatRows=1, hAlign='LEFT')
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ("ALIGN", (1, 1), (2, -1), "LEFT"),
+        ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+    ]))
+
+    # Frames with different top margins
+    first_page_frame = Frame(
+        45,
+        30,
+        width - 60,
+        height - 300
+    )
+    
+    later_pages_frame = Frame(
+        45,
+        30,
+        width - 60,
+        height - 80
+    )
+    
+    total_due = subtotal + shipping - credit
+    
+    print(f"\n=== INVOICE TOTALS DEBUG ===")
+    print(f"Subtotal: {subtotal}")
+    print(f"Shipping: {shipping}")
+    print(f"Credit: {credit}")
+    print(f"Total Due: {total_due}")
+    print("=== INVOICE TOTALS DEBUG END ===\n")
+
+    # Calculate due date (Net 30)
+    order_date_str = order.get('date', '')
+    try:
+        order_date = datetime.fromisoformat(order_date_str.replace('Z', '+00:00'))
+        order_date_formatted = order_date.strftime("%m/%d/%Y")
+        due_date = order_date + timedelta(days=30)
+        due_date_str = due_date.strftime("%m/%d/%Y")
+    except:
+        order_date_formatted = 'N/A'
+        due_date_str = 'N/A'
+    
+    # Page header functions
+    def on_first_page(canvas, doc):
+        canvas.setFont("Helvetica", 13)
+        canvas.drawString(30, height - 30, f"Order #: {order_number}")
+        canvas.drawCentredString(width / 2, height - 30, "INVOICE")
+        canvas.drawRightString(width - 40, height - 30, f"PAGE 1 of {num_pages}")
+        canvas.line(0, height - 40, width - 0, height - 40)
+        
+        # Logo
+        logo_width = 100
+        logo_height = 50
+        logo_x = width - logo_width - 40
+        logo_y = height - logo_height - 50
+        canvas.drawImage(LOGO_PATH, logo_x, logo_y, width=logo_width, height=logo_height, mask='auto')
+        
+        # Company info
+        canvas.setFont("Calibri-Bold", 14)
+        canvas.drawString(50, height - 60, "Uprising Seeds")
+        canvas.setFont("Calibri", 12)
+        canvas.drawString(50, height - 75, "1501 Fraser St")
+        canvas.drawString(50, height - 90, "Suite 105")
+        canvas.drawString(50, height - 105, "Bellingham, WA 98229")
+        canvas.drawString(50, height - 120, "360-778-3749")
+        canvas.drawString(50, height - 135, "info@uprisingorganics.com")
+        
+        # Ship To box
+        canvas.line(50, height - 150, width - 300, height - 150)
+        canvas.setFont("Calibri-Bold", 12)
+        canvas.drawString(60, height - 164, "SHIP TO:")
+        canvas.line(50, height - 150, 50, height - 265)
+        canvas.line(width - 300, height - 150, width - 300, height - 265)
+        canvas.line(50, height - 170, width - 300, height - 170)
+        
+        # Right-aligned label helper
+        def draw_right_label(label, y):
+            text_width = canvas.stringWidth(label, "Calibri", 12)
+            canvas.drawString(130 - text_width, y, label)
+        
+        canvas.setFont("Calibri", 12)
+        
+        # Ship to info
+        draw_right_label("Order #:", height - 185)
+        draw_right_label("Name:", height - 200)
+        draw_right_label("Date:", height - 215)
+        canvas.drawString(140, height - 215, order_date_formatted)
+        draw_right_label("Address:", height - 230)
+        
+        address = store_address
+        address2 = store_address2
+
+        canvas.drawString(140, height - 230, address)
+        
+        if address2:
+            draw_right_label("Address 2:", height - 245)
+            canvas.drawString(140, height - 245, address2)
+            draw_right_label("City/State/Zip:", height - 260)
+            city = store_city
+            state = store_state
+            zipcode = store_zip
+            canvas.drawString(140, height - 260, f"{city}, {state}   {zipcode}")
+        else:
+            draw_right_label("City/State/Zip:", height - 245)
+            city = store_city
+            state = store_state
+            zipcode = store_zip
+            canvas.drawString(140, height - 245, f"{city}, {state}   {zipcode}")
+        
+        # Order info
+        canvas.setFont("Calibri-Bold", 12)
+        canvas.drawString(140, height - 185, order_number)
+        canvas.drawString(140, height - 200, store.get('store_name', 'N/A'))
+        
+        # Order summary box
+        right_x = 550
+        label_x = 435
+        
+        def format_currency(value):
+            try:
+                return f"${float(value):.2f}"
+            except ValueError:
+                return "$0.00"
+        
+        def draw_right_aligned_label_value(label, value, y_position):
+            try:
+                float(value)
+                value_str = format_currency(value)
+            except (ValueError, TypeError):
+                value_str = str(value)
+            
+            canvas.drawString(label_x, y_position, label)
+            value_width = canvas.stringWidth(value_str, "Calibri", 12)
+            canvas.drawString(right_x - value_width, y_position, value_str)
+        
+        canvas.setFont("Calibri", 12)
+        draw_right_aligned_label_value("Subtotal:", subtotal, height - 180)
+        draw_right_aligned_label_value("Shipping:", shipping, height - 195)
+        draw_right_aligned_label_value("Credit:", credit, height - 210)
+        
+        print(f"\n=== DRAWING CREDIT ON PDF ===")
+        print(f"Credit value being drawn: {credit}")
+        print("=== DRAWING CREDIT ON PDF END ===\n")
+        
+        canvas.setFont("Calibri-Bold", 12)
+        draw_right_aligned_label_value("Total Due:", total_due, height - 225)
+        canvas.setFont("Calibri", 12)
+        draw_right_aligned_label_value("Term:", "Net 30", height - 245)
+        draw_right_aligned_label_value("Due Date:", due_date_str, height - 260)
+        
+        # Box around order summary
+        canvas.drawString(452, height - 159, "Order Summary")
+        canvas.line(428, height - 145, 428, height - 265)
+        canvas.line(558, height - 145, 558, height - 265)
+        canvas.line(428, height - 145, 558, height - 145)
+        canvas.line(428, height - 166, 558, height - 166)
+        canvas.line(428, height - 265, 558, height - 265)
+        canvas.line(428, height - 232, 558, height - 232)
+        
+        canvas.line(50, height - 265, width - 300, height - 265)
+    
+    def on_later_pages(canvas, doc):
+        canvas.setFont("Helvetica", 13)
+        canvas.drawString(30, height - 30, f"Order #: {order_number}")
+        canvas.drawCentredString(width / 2, height - 30, "INVOICE")
+        canvas.drawRightString(width - 40, height - 30, f"PAGE {doc.page} of {num_pages}")
+        canvas.line(0, height - 40, width - 0, height - 40)
+    
+    # Set up the document
+    doc = BaseDocTemplate(file_path, pagesize=LETTER)
+    doc.addPageTemplates([
+        PageTemplate(id='FirstPage', frames=first_page_frame, onPage=on_first_page),
+        PageTemplate(id='LaterPages', frames=later_pages_frame, onPage=on_later_pages)
+    ])
+    
+    # Build elements list with first page handling
+    elements = [
+        NextPageTemplate('LaterPages'),
+        table
+    ]
+    
+    # Build the PDF
+    doc.build(elements)
+    print(f"Store invoice PDF created: {file_path}")
+    
+    if CURRENT_USER.lower() != "ndefe":
+        try:
+            # Print the invoice PDF
+            command = f'"{SUMATRA_PATH}" -print-to "{SHEET_PRINTER}" -print-settings "fit,portrait" -silent "{file_path}"'
+            subprocess.run(command, check=True, shell=True)
+            print(f"Successfully printed invoice {file_path}")
+            
+            # Print two labels on roll printer
+            order_label = f"Order #: {order_number}"
+            store_label = store.get('store_name', 'Unknown')
+            
+            # First label (smaller font - for inside)
+            print_order_label(order_label, store_label, font_size_order=56, font_size_store=48, y_start=20)
+            
+            # Second label (larger font - for outside)
+            print_order_label(order_label, store_label, font_size_order=64, font_size_store=54, y_start=80)
+            
+        except Exception as e:
+            print(f"Failed to print invoice: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print(f"{store.get('store_name')}_{order_number}.pdf saved in store_invoices/ dir")
+
+
+
+
+def print_order_label(order_text, store_text, font_size_order=56, font_size_store=48, y_start=20):
+    """
+    Print a single order label on roll printer
+    """
+    printer_name = ROLL_PRINTER
+    dc = win32ui.CreateDC()
+    dc.CreatePrinterDC(printer_name)
+    
+    dc.StartDoc("Order Label")
+    dc.StartPage()
+    
+    # Label dimensions
+    dpi = dc.GetDeviceCaps(88)
+    label_width = int(2.625 * dpi)
+    label_height = int(1.0 * dpi)
+    x_center = label_width // 2
+    
+    # Fonts
+    bold_font = create_font("Times New Roman", font_size_order, bold=True)
+    norm_font = create_font("Times New Roman", font_size_store)
+    
+    # Draw order number
+    dc.SelectObject(bold_font)
+    dc.TextOut(x_center - dc.GetTextExtent(order_text)[0] // 2, y_start, order_text)
+    y_start += 75
+    
+    # Draw store name
+    dc.SelectObject(norm_font)
+    dc.TextOut(x_center - dc.GetTextExtent(store_text)[0] // 2, y_start, store_text)
+    
+    dc.EndPage()
+    dc.EndDoc()
+    dc.DeleteDC()
 
 
 if __name__ == "__main__":

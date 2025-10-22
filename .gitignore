@@ -12,7 +12,9 @@ instance/
 .env
 
 # PDF files
-pdfs/
+packing_slips/
+store_pick_lists/
+store_invoices/
 
 run_flask.bat
 run_flask.vbs
