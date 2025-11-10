@@ -61,7 +61,18 @@ def create_font(name, size, bold=False, italic=False):
         "charset": DEFAULT_CHARSET,
     })
 
-
+def format_variety_name_with_quotes(variety_name):
+       """
+       Format variety name with quotes only around the part outside parentheses.
+       Example: "Cocaigne (Haricot di Pamplano)" -> "'Cocaigne' (Haricot di Pamplano)"
+       Example: "Simple Variety" -> "'Simple Variety'"
+       """
+       if '(' in variety_name:
+           parts = variety_name.split('(', 1)
+           quoted_part = f"'{parts[0].strip()}'"
+           return f"{quoted_part} ({parts[1]}"
+       else:
+           return f"'{variety_name}'"
 
 @app.route('/print-germ-label', methods=['POST'])
 def print_germ_label():
@@ -188,7 +199,8 @@ def print_single_front_label_logic(data):
             return {'success': True, 'message': f'Front Single Label printed successfully ({quantity} copies)'}
         else:
             # Gather label content (shared across copies)
-            variety_name = f"'{data.get('variety_name')}'"
+            # variety_name = f"'{data.get('variety_name')}'"
+            variety_name = format_variety_name_with_quotes(data.get('variety_name'))
            
             # Check for common_name first, fall back to crop if empty
             common_name = data.get('common_name', '').strip()
@@ -500,7 +512,8 @@ def print_sheet_front_logic(data):
             return {'success': True, 'message': f'Front Sheet Label printed successfully ({quantity} copies)'}
         else:
             # Gather label content (shared across copies) - same as single label logic
-            variety_name = f"'{data.get('variety_name')}'"
+            # variety_name = f"'{data.get('variety_name')}'"
+            variety_name = format_variety_name_with_quotes(data.get('variety_name'))
             
             # Check for common_name first, fall back to crop if empty
             common_name = data.get('common_name', '').strip()
