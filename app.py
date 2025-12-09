@@ -567,7 +567,7 @@ def print_sheet_front_logic(data):
                 # Sheet layout: 3 columns x 10 rows = 30 labels
                 margin_y = int(0.5 * dpi)  # 0.5 inch top margin
                 label_width = page_width // 3
-                label_height = (page_height - margin_y) // 10 - 8
+                label_height = (page_height - margin_y) // 10 - 6
 
                 # Column adjustments for better alignment
                 left_col_offset = -30
