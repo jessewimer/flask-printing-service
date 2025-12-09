@@ -607,6 +607,7 @@ def print_sheet_front_logic(data):
 
                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
                             else:  # 3 description lines
+                                y_start += 10  # small adjustment for extra line
                                 dc.SelectObject(bold_12)
                                 dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
                                 y_start += 110  # was 55
