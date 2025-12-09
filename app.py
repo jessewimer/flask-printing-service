@@ -686,11 +686,12 @@ def print_sheet_front_logic(data):
                                 dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
 
                 # Add envelope info at bottom of sheet
+                
                 envelope = f"Envelope: {env_type}"
                 envelope_font = create_font("Times New Roman", 96, bold=True)  # Doubled from 48
                 dc.SelectObject(envelope_font)
                 envelope_x = int(0.5 * dpi)
-                envelope_y = page_height - int(0.3 * dpi)
+                envelope_y = page_height - int(0.2 * dpi)
                 dc.TextOut(envelope_x, envelope_y, envelope)
 
                 dc.EndPage()
@@ -788,7 +789,7 @@ def print_sheet_back_logic(data):
                         
                         # Calculate y_start (same logic as single back label)
                         remaining_space = label_height - total_text_height
-                        y_start = y_base + (remaining_space // 2) + 12
+                        y_start = y_base + (remaining_space // 2) + 25
 
                         # Draw each back line (same as single back label)
                         for line in back_lines:
