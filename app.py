@@ -705,114 +705,114 @@ def print_sheet_front_logic(data):
         return {'success': False, 'error': str(e)}
 
 
-def print_sheet_back_logic(data):
-    """Extract the core back sheet printing logic"""
-    try:
-        quantity = int(data.get('quantity', 1))
-        env_multiplier = int(data.get('env_multiplier', 1))
-        print(f"Environmental Multiplier: {env_multiplier}")
-        quantity *= env_multiplier
-        variety_name = f"'{data.get('variety_name')}'"
+# def print_sheet_back_logic(data):
+#     """Extract the core back sheet printing logic"""
+#     try:
+#         quantity = int(data.get('quantity', 1))
+#         env_multiplier = int(data.get('env_multiplier', 1))
+#         print(f"Environmental Multiplier: {env_multiplier}")
+#         quantity *= env_multiplier
+#         variety_name = f"'{data.get('variety_name')}'"
 
-        if CURRENT_USER.lower() == "ndefe":
-            print(f"Printing {quantity} back sheet labels for {variety_name} on Ndefe's printer")
-            print(f"Back1 {data.get('back1')}")
-            print(f"Back2 {data.get('back2')}")
-            print(f"Back3 {data.get('back3')}")
-            print(f"Back4 {data.get('back4')}")
-            print(f"Back5 {data.get('back5')}")
-            print(f"Back6 {data.get('back6')}")
-            print(f"Back7 {data.get('back7')}")
-            print("================================")
-            return {'success': True, 'message': f'Back Sheet Label printed successfully ({quantity} copies)'}
-        else:
-            # Gather back label content (same as single back label logic)
-            back_lines = [
-                data.get('back1'),
-                data.get('back2'),
-                data.get('back3'),
-                data.get('back4'),
-                data.get('back5'),
-                data.get('back6'),
-                data.get('back7')
-            ]
+#         if CURRENT_USER.lower() == "ndefe":
+#             print(f"Printing {quantity} back sheet labels for {variety_name} on Ndefe's printer")
+#             print(f"Back1 {data.get('back1')}")
+#             print(f"Back2 {data.get('back2')}")
+#             print(f"Back3 {data.get('back3')}")
+#             print(f"Back4 {data.get('back4')}")
+#             print(f"Back5 {data.get('back5')}")
+#             print(f"Back6 {data.get('back6')}")
+#             print(f"Back7 {data.get('back7')}")
+#             print("================================")
+#             return {'success': True, 'message': f'Back Sheet Label printed successfully ({quantity} copies)'}
+#         else:
+#             # Gather back label content (same as single back label logic)
+#             back_lines = [
+#                 data.get('back1'),
+#                 data.get('back2'),
+#                 data.get('back3'),
+#                 data.get('back4'),
+#                 data.get('back5'),
+#                 data.get('back6'),
+#                 data.get('back7')
+#             ]
             
-            # Remove empty lines (same as single back label)
-            back_lines = [line for line in back_lines if line]
+#             # Remove empty lines (same as single back label)
+#             back_lines = [line for line in back_lines if line]
             
-            if not back_lines:
-                return {'success': False, 'message': 'No back lines provided'}
+#             if not back_lines:
+#                 return {'success': False, 'message': 'No back lines provided'}
 
-            # Font (same as single back label)
-            font = create_font("Book Antiqua", 32, italic=True)
-            footer_font = create_font("Calibri", 40)
+#             # Font (same as single back label)
+#             font = create_font("Book Antiqua", 32, italic=True)
+#             footer_font = create_font("Calibri", 40)
 
-            printer_name = SHEET_PRINTER
+#             printer_name = SHEET_PRINTER
 
-            # Loop through each copy (same as single label approach)
-            for i in range(quantity):
-                dc = win32ui.CreateDC()
-                dc.CreatePrinterDC(printer_name)
+#             # Loop through each copy (same as single label approach)
+#             for i in range(quantity):
+#                 dc = win32ui.CreateDC()
+#                 dc.CreatePrinterDC(printer_name)
 
-                dc.StartDoc("Seed Label Back Sheet")
-                dc.StartPage()
+#                 dc.StartDoc("Seed Label Back Sheet")
+#                 dc.StartPage()
 
-                # Get printer DPI and calculate sheet dimensions
-                dpi = dc.GetDeviceCaps(88)
-                page_width = dc.GetDeviceCaps(8)
-                page_height = dc.GetDeviceCaps(10)
+#                 # Get printer DPI and calculate sheet dimensions
+#                 dpi = dc.GetDeviceCaps(88)
+#                 page_width = dc.GetDeviceCaps(8)
+#                 page_height = dc.GetDeviceCaps(10)
                 
-                # Sheet layout: 3 columns x 10 rows = 30 labels
-                margin_y = int(0.5 * dpi)
-                label_width = page_width // 3
-                label_height = (page_height - margin_y) // 10
+#                 # Sheet layout: 3 columns x 10 rows = 30 labels
+#                 margin_y = int(0.5 * dpi)
+#                 label_width = page_width // 3
+#                 label_height = (page_height - margin_y) // 10
                 
-                # Column adjustments for better alignment
-                left_col_offset = int(0.05 * dpi)
-                middle_col_offset = 0
-                right_col_offset = int(-0.05 * dpi)
-                col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
+#                 # Column adjustments for better alignment
+#                 left_col_offset = int(0.05 * dpi)
+#                 middle_col_offset = 0
+#                 right_col_offset = int(-0.05 * dpi)
+#                 col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
 
-                dc.SelectObject(font)
+#                 dc.SelectObject(font)
 
-                # Spacing logic (same as single back label)
-                num_lines = len(back_lines)
-                line_height = 39  # Exact same as single back label
-                total_text_height = line_height * num_lines
+#                 # Spacing logic (same as single back label)
+#                 num_lines = len(back_lines)
+#                 line_height = 39  # Exact same as single back label
+#                 total_text_height = line_height * num_lines
 
-                # Draw 30 labels (3 columns x 10 rows)
-                for row in range(10):
-                    y_base = margin_y + (row * label_height)
+#                 # Draw 30 labels (3 columns x 10 rows)
+#                 for row in range(10):
+#                     y_base = margin_y + (row * label_height)
                     
-                    for col in range(3):
-                        x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
+#                     for col in range(3):
+#                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
                         
-                        # Calculate y_start (same logic as single back label)
-                        remaining_space = label_height - total_text_height
-                        y_start = y_base + (remaining_space // 2) + 25
+#                         # Calculate y_start (same logic as single back label)
+#                         remaining_space = label_height - total_text_height
+#                         y_start = y_base + (remaining_space // 2) + 25
 
-                        # Draw each back line (same as single back label)
-                        for line in back_lines:
-                            text_width = dc.GetTextExtent(line)[0]
-                            dc.TextOut(x_center - text_width // 2, y_start, line)
-                            y_start += line_height
+#                         # Draw each back line (same as single back label)
+#                         for line in back_lines:
+#                             text_width = dc.GetTextExtent(line)[0]
+#                             dc.TextOut(x_center - text_width // 2, y_start, line)
+#                             y_start += line_height
 
-                # Footer with variety name
-                dc.SelectObject(footer_font)
-                footer_text = f"Variety: {variety_name}"
-                footer_x = int(0.5 * dpi)
-                footer_y = page_height - int(0.3 * dpi)
-                dc.TextOut(footer_x, footer_y, footer_text)
+#                 # Footer with variety name
+#                 dc.SelectObject(footer_font)
+#                 footer_text = f"Variety: {variety_name}"
+#                 footer_x = int(0.5 * dpi)
+#                 footer_y = page_height - int(0.3 * dpi)
+#                 dc.TextOut(footer_x, footer_y, footer_text)
 
-                dc.EndPage()
-                dc.EndDoc()
-                dc.DeleteDC()
+#                 dc.EndPage()
+#                 dc.EndDoc()
+#                 dc.DeleteDC()
 
-            return {'success': True, 'message': f'Back Sheet Label printed successfully ({quantity} copies)'}
+#             return {'success': True, 'message': f'Back Sheet Label printed successfully ({quantity} copies)'}
 
-    except Exception as e:
-        print(f"Error printing back sheet: {str(e)}")
-        return {'success': False, 'error': str(e)}
+#     except Exception as e:
+#         print(f"Error printing back sheet: {str(e)}")
+#         return {'success': False, 'error': str(e)}
 
 
 
