@@ -605,7 +605,7 @@ def print_sheet_front_logic(data):
                     
                     for col in range(3):
                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
-                        y_start = y_base - 10  # Start 20 pixels INTO the label instead of above it
+                        y_start = y_base - 5  # Start 20 pixels INTO the label instead of above it
                         
                         
                         
