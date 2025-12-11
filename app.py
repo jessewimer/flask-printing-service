@@ -568,7 +568,7 @@ def print_sheet_front_logic(data):
                 margin_y = int(0.5 * dpi)  # 0.5 inch top margin
                 label_width = page_width // 3
                 # label_height = (page_height - margin_y) // 10 - 6
-                label_height = int(1.05 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
+                label_height = int(1.01 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
 
                 # Column adjustments for better alignment
                 left_col_offset = -30
