@@ -573,7 +573,7 @@ def print_sheet_front_logic(data):
 
                 # 12/11/25 changes
                 # label_height = (page_height - margin_y) // 10 - 6
-                label_height = int(1.00 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
+                label_height = int(1.01 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
 
 
 
