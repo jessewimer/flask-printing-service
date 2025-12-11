@@ -567,8 +567,18 @@ def print_sheet_front_logic(data):
                 # Sheet layout: 3 columns x 10 rows = 30 labels
                 margin_y = int(0.5 * dpi)  # 0.5 inch top margin
                 label_width = page_width // 3
+
+
+
+
+                # 12/11/25 changes
                 # label_height = (page_height - margin_y) // 10 - 6
-                label_height = int(1.01 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
+                label_height = int(1.00 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
+
+
+
+
+
 
                 # Column adjustments for better alignment
                 left_col_offset = -30
@@ -577,14 +587,32 @@ def print_sheet_front_logic(data):
 
                 col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
 
+
+
+
+
+
+                # 12/11/25 changes
                 # Draw 30 labels (3 columns x 10 rows)
+                # for row in range(10):
+                #     y_base = margin_y + (row * label_height)
+                    
+                #     for col in range(3):
+                #         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
+                #         y_start = y_base - 70
                 for row in range(10):
                     y_base = margin_y + (row * label_height)
                     
                     for col in range(3):
                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
-                        y_start = y_base - 70
-
+                        y_start = y_base + 20  # Start 20 pixels INTO the label instead of above it
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         # Use same conditional logic as single front label
                         if "pkt" in sku_suffix:
                             if not desc_line3:  # only 2 description lines
