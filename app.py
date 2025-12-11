@@ -573,7 +573,7 @@ def print_sheet_front_logic(data):
 
                 # 12/11/25 changes
                 # label_height = (page_height - margin_y) // 10 - 6
-                label_height = int(1.01 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
+                label_height = int(1.00 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
 
 
 
@@ -600,14 +600,17 @@ def print_sheet_front_logic(data):
                 #     for col in range(3):
                 #         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
                 #         y_start = y_base - 70
+                # Row-specific adjustments to compensate for printer scaling
+                row_adjustments = [0, 10, 20, 20, 30, 30, 30, 30, 30, 30]  # Adjust these values
+
                 for row in range(10):
-                    y_base = margin_y + (row * label_height)
+                    y_base = margin_y + (row * label_height) + row_adjustments[row]
                     
                     for col in range(3):
                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
-                        y_start = y_base - 5  # Start 20 pixels INTO the label instead of above it
-                        
-                        
+                        y_start = y_base - 5
+                                        
+                                        
                         
                         
                         
