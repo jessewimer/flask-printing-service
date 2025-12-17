@@ -298,7 +298,7 @@ def print_single_front_label_logic(data):
                     lot_germ = f"Lot: {lot_code}    Germ: {germination}%"
                     if not desc_line3:
                         if not rad_type:
-                            dc.SelectObject(bold_16)
+                            dc.SelectObject(bold_12)
                             dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
                             y_start += 69
 
@@ -319,7 +319,7 @@ def print_single_front_label_logic(data):
                             pkg_days = f"{pkg_size} -- {days}"
                             lot_germ_year = f"Lot: {lot_code}    Germ: {germination}%    Packed for: {year}"
 
-                            dc.SelectObject(bold_16)
+                            dc.SelectObject(bold_12)
                             dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
                             y_start += 64
 
@@ -338,7 +338,7 @@ def print_single_front_label_logic(data):
                             dc.SelectObject(normal_12)
                             dc.TextOut(x_center - dc.GetTextExtent(lot_germ_year)[0] // 2, y_start, lot_germ_year)
                     else:
-                        dc.SelectObject(bold_16)
+                        dc.SelectObject(bold_12)
                         dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
                         y_start += 80
 
@@ -574,7 +574,6 @@ def print_sheet_front_logic(data):
                 # 12/11/25 changes
                 # label_height = (page_height - margin_y) // 10 - 6
                 label_height = int(1.00 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
-
 
 
 
