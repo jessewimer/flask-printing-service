@@ -232,7 +232,7 @@ def print_single_front_label_logic(data):
             bold_12 = create_font("Times New Roman", 48, bold=True)
             italic_9 = create_font("Times New Roman", 36, italic=True)
             normal_8 = create_font("Times New Roman", 32)
-            bold_16 = create_font("Times New Roman", 60, bold=True)
+            bold_14 = create_font("Times New Roman", 54, bold=True)
             normal_12 = create_font("Times New Roman", 40)
             italic_12 = create_font("Times New Roman", 40, italic=True)
 
@@ -298,7 +298,7 @@ def print_single_front_label_logic(data):
                     lot_germ = f"Lot: {lot_code}    Germ: {germination}%"
                     if not desc_line3:
                         if not rad_type:
-                            dc.SelectObject(bold_12)
+                            dc.SelectObject(bold_14)
                             dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
                             y_start += 69
 
@@ -319,7 +319,7 @@ def print_single_front_label_logic(data):
                             pkg_days = f"{pkg_size} -- {days}"
                             lot_germ_year = f"Lot: {lot_code}    Germ: {germination}%    Packed for: {year}"
 
-                            dc.SelectObject(bold_12)
+                            dc.SelectObject(bold_14)
                             dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_name)
                             y_start += 64
 
@@ -338,7 +338,7 @@ def print_single_front_label_logic(data):
                             dc.SelectObject(normal_12)
                             dc.TextOut(x_center - dc.GetTextExtent(lot_germ_year)[0] // 2, y_start, lot_germ_year)
                     else:
-                        dc.SelectObject(bold_12)
+                        dc.SelectObject(bold_14)
                         dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
                         y_start += 80
 
