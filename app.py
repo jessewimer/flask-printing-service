@@ -43,6 +43,7 @@ CORS(app)
 
 ROLL_PRINTER = "ZDesigner GX430t"
 SHEET_PRINTER = "RICOH P 501"
+ROLLO_PRINTER = "Rollo Printer (Copy 1)"
 CURRENT_USER = os.getlogin()
 SUMATRA_PATH = r"C:\Users\seedy\AppData\Local\SumatraPDF\SumatraPDF.exe"
 
@@ -2704,6 +2705,154 @@ def print_order_label(order_text, store_text, font_size_order=56, font_size_stor
     dc.EndDoc()
     dc.DeleteDC()
 
+
+@app.route('/print-mix-label', methods=['POST'])
+def print_mix_label():
+    try:
+        data = request.get_json()
+        
+        mix_name = data.get('mix_name')
+        is_component = data.get('is_component', False)
+        lot_code = data.get('lot_code')
+        components = data.get('components', [])
+        
+        if CURRENT_USER.lower() == "ndefe":
+            print("=== MIX LABEL PRINT REQUEST ON NDEFE ===")
+            print(f"Mix Name: {mix_name}")
+            print(f"Is Component: {is_component}")
+            print(f"Lot Code: {lot_code}")
+            print(f"Components: {components}")
+            print("=========================================")
+            return jsonify({'success': True, 'message': 'Label printed successfully (debug mode)'})
+        
+        # Setup printer
+        printer_name = ROLLO_PRINTER
+        dc = win32ui.CreateDC()
+        dc.CreatePrinterDC(printer_name)
+        dc.StartDoc("Mix Label")
+        dc.StartPage()
+        
+        # Label dimensions (4x6 shipping label)
+        dpi = dc.GetDeviceCaps(88)  # LOGPIXELSX
+        label_width = int(4.0 * dpi)
+        label_height = int(6.0 * dpi)
+        
+        margin = int(0.25 * dpi)
+        y_pos = margin
+        
+        # Title - Mix Name
+        title_font = create_font("Calibri", 60, bold=True)
+        dc.SelectObject(title_font)
+        
+        # Word wrap the mix name if needed
+        max_width = label_width - (2 * margin)
+        words = mix_name.split()
+        lines = []
+        current_line = []
+        
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            text_width = dc.GetTextExtent(test_line)[0]
+            if text_width <= max_width:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+        if current_line:
+            lines.append(' '.join(current_line))
+        
+        # Draw mix name (centered)
+        for line in lines:
+            text_width = dc.GetTextExtent(line)[0]
+            x_pos = (label_width - text_width) // 2
+            dc.TextOut(x_pos, y_pos, line)
+            y_pos += 70
+        
+        # (component) subtitle if applicable
+        if is_component:
+            subtitle_font = create_font("Calibri", 40, italic=True)
+            dc.SelectObject(subtitle_font)
+            component_text = "(component)"
+            text_width = dc.GetTextExtent(component_text)[0]
+            x_pos = (label_width - text_width) // 2
+            dc.TextOut(x_pos, y_pos, component_text)
+            y_pos += 60
+        
+        y_pos += 20  # Extra spacing
+        
+        # Lot Code
+        lot_font = create_font("Calibri", 48, bold=True)
+        dc.SelectObject(lot_font)
+        lot_text = f"Lot: {lot_code}"
+        text_width = dc.GetTextExtent(lot_text)[0]
+        x_pos = (label_width - text_width) // 2
+        dc.TextOut(x_pos, y_pos, lot_text)
+        y_pos += 80
+        
+        # Table header
+        header_font = create_font("Calibri", 36, bold=True)
+        dc.SelectObject(header_font)
+        
+        col1_x = margin
+        col2_x = margin + int(0.8 * dpi)
+        col3_x = margin + int(2.5 * dpi)
+        
+        # Draw table headers
+        dc.TextOut(col1_x, y_pos, "Amt")
+        dc.TextOut(col2_x, y_pos, "Variety")
+        dc.TextOut(col3_x, y_pos, "Lot")
+        y_pos += 50
+        
+        # Draw header line
+        pen = win32ui.CreatePen(0, 2, 0x000000)  # Solid black line
+        dc.SelectObject(pen)
+        dc.MoveTo(margin, y_pos)
+        dc.LineTo(label_width - margin, y_pos)
+        y_pos += 15
+        
+        # Table rows
+        row_font = create_font("Calibri", 32)
+        dc.SelectObject(row_font)
+        
+        for component in components:
+            parts = str(component.get('parts', 1))
+            variety = component.get('variety', '')
+            lot = component.get('lot', '')
+            
+            # Truncate variety name if too long
+            max_variety_chars = 18
+            if len(variety) > max_variety_chars:
+                variety = variety[:max_variety_chars-3] + '...'
+            
+            dc.TextOut(col1_x, y_pos, parts)
+            dc.TextOut(col2_x, y_pos, variety)
+            dc.TextOut(col3_x, y_pos, lot)
+            y_pos += 45
+            
+            # Draw row line
+            dc.MoveTo(margin, y_pos)
+            dc.LineTo(label_width - margin, y_pos)
+            y_pos += 10
+        
+        # Finalize print job
+        dc.EndPage()
+        dc.EndDoc()
+        dc.DeleteDC()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Mix label printed successfully'
+        })
+        
+    except Exception as e:
+        print(f"Error printing mix label: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)  # Debug=True helps while testing
