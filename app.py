@@ -2060,7 +2060,7 @@ def print_stock_seed_label():
         
         # Extract the data
         variety = data.get('variety', 'Unknown')
-        veg_type = data.get('veg_type', 'Unknown') 
+        crop = data.get('crop', 'Unknown') 
         lot_number = data.get('lot_number', 'Unknown')
         quantity = data.get('quantity', 'Unknown')
         
@@ -2070,7 +2070,7 @@ def print_stock_seed_label():
             print("STOCK SEED LABEL PRINT REQUEST")
             print("="*50)
             print(f"Variety: {variety}")
-            print(f"Vegetable Type: {veg_type}")
+            print(f"Crop: {crop}")
             print(f"Lot Number: {lot_number}")
             print(f"Quantity Saved: {quantity}")
             print("="*50 + "\n")
@@ -2122,8 +2122,8 @@ def print_stock_seed_label():
                 y_start += line_height
                 
                 # Line 3: Vegetable type
-                text_width = dc.GetTextExtent(veg_type)[0]
-                dc.TextOut(x_center - text_width // 2, y_start, veg_type)
+                text_width = dc.GetTextExtent(crop)[0]
+                dc.TextOut(x_center - text_width // 2, y_start, crop)
                 y_start += line_height
                 
                 # Line 4: "Lot: " + lot number
@@ -2288,7 +2288,7 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
         
         row.append(str(item.get('quantity', 0)))
         row.append(item.get('variety_name', 'Unknown'))
-        row.append(item.get('veg_type', 'Unknown'))
+        row.append(item.get('crop', 'Unknown'))
         
         data.append(row)
     
@@ -2440,7 +2440,7 @@ def generate_store_invoice_pdf(order, store, items):
     subtotal = 0
     for item in items:
         variety = item.get('variety_name', 'Unknown')
-        crop = item.get('veg_type', 'Unknown')
+        crop = item.get('crop', 'Unknown')
         quantity = item.get('quantity', 0)
         price = float(item.get('price', 0))
         line_total = quantity * price
