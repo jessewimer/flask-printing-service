@@ -1036,14 +1036,14 @@ def create_pull_items_pdf(file_path, items, batch_date):
     
     # Table data
     table_data = [
-        ['#', 'Variety Name', 'Type', 'SKU Suffix', 'Qty']
+        ['#', 'Variety Name', 'Crop', 'SKU Suffix', 'Qty']
     ]
     
     for i, item in enumerate(items, 1):
         table_data.append([
             str(i),
             item.get('variety_name', ''),
-            item.get('type', ''),
+            item.get('crop', ''),
             item.get('sku_suffix', ''),
             str(item.get('quantity', 0))
         ])
