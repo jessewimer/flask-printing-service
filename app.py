@@ -1,8 +1,8 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify #, send_file
 from flask_cors import CORS
 from barcode import Code128
 from barcode.writer import ImageWriter
-import win32print
+# import win32print
 import win32ui
 from win32con import FW_NORMAL, FW_BOLD, DEFAULT_CHARSET
 from PIL import Image, ImageWin
@@ -11,16 +11,15 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.pagesizes import LETTER
-from reportlab.pdfgen import canvas
+# from reportlab.lib.pagesizes import LETTER
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer
 import subprocess
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 import textwrap
 from datetime import datetime
-import math
+# import math
 from reportlab.lib.enums import TA_CENTER
 import tempfile
 
@@ -32,12 +31,6 @@ pdfmetrics.registerFont(TTFont("Book Antiqua", r"C:\Windows\Fonts\ANTQUAI.TTF"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOGO_PATH = os.path.join(BASE_DIR, "assets", "uprising_logo.png")
 
-# Page limits for packing slips
-FIRST_PAGE_LIMIT = 27       # max rows (incl. blanks) on page 1
-OTHER_PAGE_LIMIT = 40       # max rows (incl. blanks) on subsequent pages
-
-
-
 app = Flask(__name__)
 CORS(app) 
 
@@ -46,7 +39,9 @@ SHEET_PRINTER = "RICOH P 501"
 ROLLO_PRINTER = "Rollo Printer (Copy 1)"
 CURRENT_USER = os.getlogin()
 SUMATRA_PATH = r"C:\Users\seedy\AppData\Local\SumatraPDF\SumatraPDF.exe"
-
+# Page limits for packing slips
+FIRST_PAGE_LIMIT = 27       # max rows (incl. blanks) on page 1
+OTHER_PAGE_LIMIT = 40       # max rows (incl. blanks) on subsequent pages
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -166,9 +161,6 @@ def print_germ_label():
             'success': False,
             'error': str(e)
         }), 500
-
-
-
 
 
 def print_single_front_label_logic(data):
@@ -481,9 +473,6 @@ def print_single_back_label():
         }), 500
 
 
-
-# [CONFIRMED WORKING]
-
 def print_sheet_front_logic(data):
     """Extract the core front sheet printing logic"""
     try:
@@ -569,16 +558,9 @@ def print_sheet_front_logic(data):
                 margin_y = int(0.4 * dpi)  # 0.5 inch top margin
                 label_width = page_width // 3
 
-
-
-
                 # 12/11/25 changes
                 # label_height = (page_height - margin_y) // 10 - 6
                 label_height = int(1.00 * dpi)  # Exactly 1 inch per label (Avery 5960 spec)
-
-
-
-
 
                 # Column adjustments for better alignment
                 left_col_offset = -30
@@ -587,19 +569,6 @@ def print_sheet_front_logic(data):
 
                 col_offsets = [left_col_offset, middle_col_offset, right_col_offset]
 
-
-
-
-
-
-                # 12/11/25 changes
-                # Draw 30 labels (3 columns x 10 rows)
-                # for row in range(10):
-                #     y_base = margin_y + (row * label_height)
-                    
-                #     for col in range(3):
-                #         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
-                #         y_start = y_base - 70
                 # Row-specific adjustments to compensate for printer scaling
                 row_adjustments = [0, 10, 20, 20, 30, 30, 30, 30, 30, 30]  # Adjust these values
 
@@ -609,12 +578,6 @@ def print_sheet_front_logic(data):
                     for col in range(3):
                         x_center = (col * label_width) + (label_width // 2) + col_offsets[col]
                         y_start = y_base - 15
-                                        
-                                        
-                        
-                        
-                        
-                        
                         
                         # Use same conditional logic as single front label
                         if "pkt" in sku_suffix:
@@ -795,7 +758,6 @@ def print_sheet_back_logic(data):
                 page_width = dc.GetDeviceCaps(8)
                 page_height = dc.GetDeviceCaps(10)
 
-                
                 # Sheet layout: 3 columns x 10 rows = 30 labels
                 margin_y = int(0.5 * dpi)
                 label_width = page_width // 3
@@ -954,8 +916,6 @@ def print_orders():
             'success': False,
             'error': str(e)
         }), 500
-
-
 
 
 @app.route('/print-items-to-pull', methods=['POST'])
@@ -1218,8 +1178,8 @@ def generate_pdf(order_number, order, action):
     else:
          num_pages = 6
     
-    c = canvas.Canvas(file_path, pagesize=LETTER)
-    width, height = LETTER
+    c = canvas.Canvas(file_path, pagesize=letter)
+    width, height = letter
 
     # Add logo
     logo_width = 100
@@ -1593,14 +1553,6 @@ def generate_pdf(order_number, order, action):
 
     return
 
-    
-
-# @app.route('/view-invoice', methods=['POST'])
-# def view_invoice():
-#     order_number = request.form.get("order_data")
-#     # call generate_pdf with action "view"
-#     # generate_pdf(order_number, order_data[order_number], action="view")
-#     return
 
 # Handles printing bulk items from the process order page
 @app.route('/print-range', methods=['POST'])
@@ -1716,15 +1668,6 @@ def print_range():
             'success': False,
             'error': str(e)
         }), 500
-
-
-
-
-
-
-
-
-
 
 
 @app.route('/print-envelope-table', methods=['POST'])
@@ -2228,7 +2171,7 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     
     # Create PDF document
-    doc = SimpleDocTemplate(filepath, pagesize=LETTER,
+    doc = SimpleDocTemplate(filepath, pagesize=letter,
                             leftMargin=40, rightMargin=40,
                             topMargin=40, bottomMargin=40)
     
@@ -2273,7 +2216,7 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     has_photos = any(item.get('has_photo', False) for item in items)
     
     # Build table data
-    headers = ["Seed", "Qty", "Variety", "Type"]
+    headers = ["Seed", "Qty", "Variety", "Crop"]
     if has_photos:
         headers.insert(1, "Photo")
     
@@ -2413,7 +2356,7 @@ def generate_store_invoice_pdf(order, store, items):
     # Ensure directory exists
     os.makedirs("store_invoices", exist_ok=True)
 
-    width, height = LETTER
+    width, height = letter
     styles = getSampleStyleSheet()
     
     # Calculate pagination based on item count
@@ -2436,7 +2379,7 @@ def generate_store_invoice_pdf(order, store, items):
         num_pages = 8
 
     # Build table data - NEW COLUMN ORDER
-    data = [["Qty", "Variety", "Type", "Unit Price", "Extended"]]
+    data = [["Qty", "Variety", "Crop", "Unit Price", "Extended"]]
     subtotal = 0
     for item in items:
         variety = item.get('variety_name', 'Unknown')
@@ -2628,7 +2571,7 @@ def generate_store_invoice_pdf(order, store, items):
         canvas.line(0, height - 40, width - 0, height - 40)
     
     # Set up the document
-    doc = BaseDocTemplate(file_path, pagesize=LETTER)
+    doc = BaseDocTemplate(file_path, pagesize=letter)
     doc.addPageTemplates([
         PageTemplate(id='FirstPage', frames=first_page_frame, onPage=on_first_page),
         PageTemplate(id='LaterPages', frames=later_pages_frame, onPage=on_later_pages)
