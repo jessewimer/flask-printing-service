@@ -555,7 +555,7 @@ def print_sheet_front_logic(data):
                 page_height = dc.GetDeviceCaps(10)
                 
                 # Sheet layout: 3 columns x 10 rows = 30 labels
-                margin_y = int(0.425 * dpi)  # 0.5 inch top margin
+                margin_y = int(0.42 * dpi)  # 0.5 inch top margin
                 label_width = page_width // 3
 
                 # 12/11/25 changes
