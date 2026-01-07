@@ -2434,7 +2434,7 @@ def generate_store_invoice_pdf(order, store, items):
     print("=== INVOICE TOTALS DEBUG END ===\n")
 
     # Calculate due date (Net 30)
-    order_date_str = order.get('fullfilled_date', '')
+    order_date_str = order.get('fulfilled_date', '')
     try:
         order_date = datetime.fromisoformat(order_date_str.replace('Z', '+00:00'))
         order_date_formatted = order_date.strftime("%m/%d/%Y")
