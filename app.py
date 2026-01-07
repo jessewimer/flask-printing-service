@@ -2427,7 +2427,7 @@ def generate_store_invoice_pdf(order, store, items):
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
         ("FONTNAME", (0, 0), (-1, 0), "Calibri-Bold"),
-        ("FONTNAME", (0, 1), (-1, -1), "Calibri"),  # Add this line for data rows
+        # ("FONTNAME", (0, 1), (-1, -1), "Calibri"),  # Add this line for data rows
         ("ALIGN", (0, 0), (0, -1), "CENTER"),
         ("ALIGN", (1, 1), (2, -1), "LEFT"),
         ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
