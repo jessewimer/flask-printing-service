@@ -2386,12 +2386,12 @@ def generate_store_invoice_pdf(order, store, items):
         num_pages = 8
 
 
-    print("\n=== VARIETY NAMES DEBUG ===")
-    for item in items:
-        variety = item.get('variety_name', 'Unknown')
-        print(f"Variety: {variety}")
-        print(f"Variety bytes: {variety.encode('utf-8')}")
-    print("=== VARIETY NAMES DEBUG END ===\n")
+    # print("\n=== VARIETY NAMES DEBUG ===")
+    # for item in items:
+    #     variety = item.get('variety_name', 'Unknown')
+    #     print(f"Variety: {variety}")
+    #     print(f"Variety bytes: {variety.encode('utf-8')}")
+    # print("=== VARIETY NAMES DEBUG END ===\n")
 
     # Build table data - NEW COLUMN ORDER
     data = [["Qty", "Variety", "Crop", "Unit Price", "Extended"]]
