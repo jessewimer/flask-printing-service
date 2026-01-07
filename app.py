@@ -1013,14 +1013,21 @@ def create_pull_items_pdf(file_path, items, batch_date):
     
     # Black and white table style
     table.setStyle(TableStyle([
-        # Header row - bold and larger font
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        # # Header row - bold and larger font
+        # ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        # ('FONTSIZE', (0, 0), (-1, 0), 12),
+        
+        # # Data rows - regular font
+        # ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        # ('FONTSIZE', (0, 1), (-1, -1), 10),
+            # Header row - bold and larger font
+        ('FONTNAME', (0, 0), (-1, 0), 'Calibri-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         
         # Data rows - regular font
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Calibri'),
         ('FONTSIZE', (0, 1), (-1, -1), 10),
-        
+            
         # Alignment
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -2378,6 +2385,14 @@ def generate_store_invoice_pdf(order, store, items):
     else:
         num_pages = 8
 
+
+    print("\n=== VARIETY NAMES DEBUG ===")
+    for item in items:
+        variety = item.get('variety_name', 'Unknown')
+        print(f"Variety: {variety}")
+        print(f"Variety bytes: {variety.encode('utf-8')}")
+    print("=== VARIETY NAMES DEBUG END ===\n")
+
     # Build table data - NEW COLUMN ORDER
     data = [["Qty", "Variety", "Crop", "Unit Price", "Extended"]]
     subtotal = 0
@@ -2399,10 +2414,20 @@ def generate_store_invoice_pdf(order, store, items):
     
     # Create table with adjusted column widths
     table = Table(data, colWidths=[40, 193, 135, 70, 70], repeatRows=1, hAlign='LEFT')
+    # table.setStyle(TableStyle([
+    #     ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+    #     ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+    #     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+    #     ("ALIGN", (0, 0), (0, -1), "CENTER"),
+    #     ("ALIGN", (1, 1), (2, -1), "LEFT"),
+    #     ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
+    #     ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+    # ]))
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, 0), "Calibri-Bold"),
+        ("FONTNAME", (0, 1), (-1, -1), "Calibri"),  # Add this line for data rows
         ("ALIGN", (0, 0), (0, -1), "CENTER"),
         ("ALIGN", (1, 1), (2, -1), "LEFT"),
         ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
