@@ -2237,9 +2237,9 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     
     # Table column widths
     if has_photos:
-        col_widths = [50, 50, 50, 230, 150]
+        col_widths = [50, 50, 50, 200, 180]
     else:
-        col_widths = [50, 50, 230, 150]
+        col_widths = [50, 50, 200, 180]
     
     # Create the table
     table = Table(data, colWidths=col_widths, repeatRows=1, hAlign='LEFT')
