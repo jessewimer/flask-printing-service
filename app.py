@@ -2499,7 +2499,7 @@ def generate_store_invoice_pdf(order, store, items):
         canvas.drawString(50, height - 90, "Suite 105")
         canvas.drawString(50, height - 105, "Bellingham, WA 98229")
         canvas.drawString(50, height - 120, "360-778-3749")
-        canvas.drawString(50, height - 135, "info@uprisingorganics.com")
+        canvas.drawString(50, height - 135, "wholesale@uprisingorganics.com")
         
         # Ship To box
         canvas.line(50, height - 150, width - 300, height - 150)
