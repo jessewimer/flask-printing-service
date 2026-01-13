@@ -1179,19 +1179,33 @@ def generate_pdf(order_number, order, action):
     elif sorted_pkt_list and sorted_bulk_list and sorted_misc_list:
         num_items = len(sorted_pkt_list) + len(sorted_bulk_list) + len(sorted_misc_list) + 2
     
-    if num_items <= 27:
+    # if num_items <= 27:
+    #     num_pages = 1
+    # elif num_items <=  70:
+    #     num_pages = 2
+    # elif num_items <=  113:  
+    #     num_pages = 3
+    # elif num_items <=  156:
+    #     num_pages = 4
+    # elif num_items <=  199:
+    #     num_pages = 5
+    # else:
+    #      num_pages = 6
+
+        
+    if num_items <= 28:  # Changed from 27
         num_pages = 1
-    elif num_items <=  70:
+    elif num_items <= 71:  # Changed from 70 
         num_pages = 2
-    elif num_items <=  113:  
+    elif num_items <= 114:  # Changed from 113
         num_pages = 3
-    elif num_items <=  156:
+    elif num_items <= 157:  # Changed from 156
         num_pages = 4
-    elif num_items <=  199:
+    elif num_items <= 200:  # Changed from 199
         num_pages = 5
     else:
-         num_pages = 6
-    
+        num_pages = 6
+        
     c = canvas.Canvas(file_path, pagesize=letter)
     width, height = letter
 
