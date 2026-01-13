@@ -332,7 +332,7 @@ def print_single_front_label_logic(data):
                             dc.TextOut(x_center - dc.GetTextExtent(lot_germ_year)[0] // 2, y_start, lot_germ_year)
                     else:
                         dc.SelectObject(bold_14)
-                        dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
+                        dc.TextOut(x_center - dc.GetTextExtent(common_name)[0] // 2, y_start, common_name)
                         y_start += 80
 
                         dc.SelectObject(bold_12)
