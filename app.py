@@ -1528,7 +1528,7 @@ def generate_pdf(order_number, order, action):
         # packets and misc
         elif len(sorted_bulk_list) < 1 and len(sorted_misc_list) > 0:
             lineitem_height, counter = draw_lineitems(c, sorted_misc_list, lineitem_height, counter)
-            lineitem_height, counter = draw_lineitems(c, sorted_bulk_list, lineitem_height, counter)
+            lineitem_height, counter = draw_lineitems(c, sorted_pkt_list, lineitem_height, counter)
         # pkts, bulks, and misc
         elif len(sorted_bulk_list) > 0 and len(sorted_misc_list) > 0:
             lineitem_height, counter = draw_lineitems(c, sorted_misc_list, lineitem_height, counter) 
