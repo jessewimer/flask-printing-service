@@ -2244,24 +2244,40 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     has_photos = any(item.get('has_photo', False) for item in items)
     
     # Build table data
-    headers = ["Seed", "Qty", "Variety", "Crop"]
-    if has_photos:
-        headers.insert(1, "Photo")
-    
-    data = [headers]
-    
-    for item in items:
-        row = [""]  # Seed checkbox column
+    # headers = ["Seed", "Qty", "Variety", "Crop"]
+    # if has_photos:
+    #     headers.insert(1, "Photo")
+    # Build table data
+    headers = ["Photo", "Seed", "Qty", "Variety", "Crop"]  # Swapped Photo and Seed
+    if not has_photos:
+        headers = ["Seed", "Qty", "Variety", "Crop"]  # When no photos, only show Seed
         
+    data = [headers]
+    for item in items:
         if has_photos:
             # Show checkmark if photo is NOT needed, empty if photo IS needed
-            row.append("✓" if not item.get('has_photo', False) else "")
+            row = ["✓" if not item.get('has_photo', False) else ""]  # Photo column first
+            row.append("")  # Seed checkbox column second
+        else:
+            row = [""]  # Seed checkbox column
         
         row.append(str(item.get('quantity', 0)))
         row.append(item.get('variety_name', 'Unknown'))
         row.append(item.get('crop', 'Unknown'))
         
         data.append(row)
+    # for item in items:
+    #     row = [""]  # Seed checkbox column
+        
+    #     if has_photos:
+    #         # Show checkmark if photo is NOT needed, empty if photo IS needed
+    #         row.append("✓" if not item.get('has_photo', False) else "")
+        
+    #     row.append(str(item.get('quantity', 0)))
+    #     row.append(item.get('variety_name', 'Unknown'))
+    #     row.append(item.get('crop', 'Unknown'))
+        
+    #     data.append(row)
     
     # Table column widths
     if has_photos:
@@ -2272,16 +2288,32 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     # Create the table
     table = Table(data, colWidths=col_widths, repeatRows=1, hAlign='LEFT')
     
+    # # Table style
+    # style = TableStyle([
+    #     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+    #     ('FONTSIZE', (0, 0), (-1, -1), 11),
+    #     ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+    #     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+    #     ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Center seed checkbox column
+    #     ('ALIGN', (1 if not has_photos else 2, 0), (1 if not has_photos else 2, -1), 'CENTER'),  # Center Qty column
+    #     ('GRID', (0, 0), (-1, -1), 0.25, colors.grey)
+    # ])
     # Table style
     style = TableStyle([
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Center seed checkbox column
-        ('ALIGN', (1 if not has_photos else 2, 0), (1 if not has_photos else 2, -1), 'CENTER'),  # Center Qty column
         ('GRID', (0, 0), (-1, -1), 0.25, colors.grey)
     ])
+    
+    if has_photos:
+        style.add('ALIGN', (0, 0), (0, -1), 'CENTER')  # Center Photo column (now first)
+        style.add('ALIGN', (1, 0), (1, -1), 'CENTER')  # Center Seed checkbox column (now second)
+        style.add('ALIGN', (2, 0), (2, -1), 'CENTER')  # Center Qty column
+    else:
+        style.add('ALIGN', (0, 0), (0, -1), 'CENTER')  # Center Seed checkbox column
+        style.add('ALIGN', (1, 0), (1, -1), 'CENTER')  # Center Qty column
     
     if has_photos:
         style.add('ALIGN', (1, 0), (1, -1), 'CENTER')  # Center Photo column
