@@ -1640,6 +1640,7 @@ def print_range():
             print_data = {
                 'variety_name': item.get('variety_name'),
                 'crop': item.get('crop'),
+                'common_name': item.get('common_name'),
                 'days': item.get('days'),
                 'sku_suffix': sku_suffix,
                 'pkg_size': item.get('pkg_size'),
