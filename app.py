@@ -1000,23 +1000,22 @@ def create_pull_items_pdf(file_path, items, batch_date):
     )
     title = Paragraph(f"Bulk items to pull -- {batch_date}", title_style)
     story.append(title)
-    
+
     # Table data
     table_data = [
-        ['#', 'Variety Name', 'Crop', 'SKU Suffix', 'Qty']
+        ['Variety Name', 'Crop', 'SKU Suffix', 'Qty']
     ]
-    
-    for i, item in enumerate(items, 1):
+
+    for item in items:
         table_data.append([
-            str(i),
             item.get('variety_name', ''),
             item.get('crop', ''),
             item.get('sku_suffix', ''),
             str(item.get('quantity', 0))
         ])
-    
+        
     # Create table
-    table = Table(table_data, colWidths=[0.5*inch, 3*inch, 1.5*inch, 1*inch, 0.7*inch])
+    table = Table(table_data, colWidths=[3*inch, 1.5*inch, 1*inch, 0.7*inch])
     
     # Black and white table style
     table.setStyle(TableStyle([
