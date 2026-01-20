@@ -1051,10 +1051,10 @@ def create_pull_items_pdf(file_path, items, batch_date):
     story.append(table)
     
     # Footer
-    story.append(Spacer(1, 20))
-    footer_text = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    footer = Paragraph(footer_text, styles['Normal'])
-    story.append(footer)
+    # story.append(Spacer(1, 20))
+    # footer_text = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    # footer = Paragraph(footer_text, styles['Normal'])
+    # story.append(footer)
     
     doc.build(story)
     print(f"PDF created: {file_path}")
