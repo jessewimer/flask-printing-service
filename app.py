@@ -1195,17 +1195,23 @@ def generate_pdf(order_number, order, action):
         
     if num_items <= 28:  # Changed from 27
         num_pages = 1
-    elif num_items <= 71:  # Changed from 70 
+    elif num_items <= 72:  # Changed from 70 
         num_pages = 2
-    elif num_items <= 114:  # Changed from 113
+    elif num_items <= 116:  # Changed from 113
         num_pages = 3
-    elif num_items <= 157:  # Changed from 156
+    elif num_items <= 160:  # Changed from 156
         num_pages = 4
-    elif num_items <= 200:  # Changed from 199
+    elif num_items <= 205:  # Changed from 199
         num_pages = 5
-    else:
+    elif num_items <= 248:
         num_pages = 6
-        
+    elif num_items <= 292:
+        num_pages = 7
+    elif num_items <= 336:
+        num_pages = 8
+    else:
+        num_pages = 9 
+            
     c = canvas.Canvas(file_path, pagesize=letter)
     width, height = letter
 
@@ -1424,107 +1430,170 @@ def generate_pdf(order_number, order, action):
         return lineitem_height, counter
 
 
-    # def draw_misc_items(c, sorted_misc, lineitem_height, counter):
     def draw_lineitems(c, item_list, lineitem_height, counter):
         if counter != 1:
             lineitem_height += 17  # extra space between sections
-        # print(f"New draw_lineitems: {item_list}")
+            counter += 1
         for lineitem in item_list:
-            if counter < 28:
+            if counter <= 28:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter == 28:
+            elif counter == 29:
                 c.showPage()
                 draw_header(c, 2)
-
                 c.setFont("Calibri", 11)
                 lineitem_height = 47
-
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter < 71:
+            elif counter <= 72:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter == 71:
+            elif counter == 73:
                 c.showPage()
                 draw_header(c, 3)
-
                 c.setFont("Calibri", 11)
                 lineitem_height = 47
-
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter < 114:
+            elif counter <= 116:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-            elif counter == 114:
+            elif counter == 117:
                 c.showPage()
                 draw_header(c, 4)
-
                 c.setFont("Calibri", 11)
                 lineitem_height = 47
-
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-            elif counter < 157:
+            elif counter <= 160:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter == 157:
+            elif counter == 161:
                 c.showPage()
                 draw_header(c, 5)
-
                 c.setFont("Calibri", 11)
                 lineitem_height = 47
-
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-            elif counter < 200:
+            elif counter <= 204:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter == 200:
+            elif counter == 205:
                 c.showPage()
                 draw_header(c, 6)
-
                 c.setFont("Calibri", 11)
                 lineitem_height = 47
-
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-            elif counter == 200:
-                c.showPage()
-                draw_header(c, 6)
-
-                c.setFont("Calibri", 11)
-                lineitem_height = 47
-
+            elif counter <= 248:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter < 243:
-                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter == 243:
+            elif counter == 249:
                 c.showPage()
                 draw_header(c, 7)
-
                 c.setFont("Calibri", 11)
                 lineitem_height = 47
-
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-            elif counter < 285:
+            elif counter <= 292:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter == 285:
+            elif counter == 293:
                 c.showPage()
                 draw_header(c, 8)
-
                 c.setFont("Calibri", 11)
                 lineitem_height = 47
-
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter == 285:
-                c.showPage()
-                draw_header(c, 8)
-
-                c.setFont("Calibri", 11)
-                lineitem_height = 47
-
+            elif counter <= 336:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-            elif counter < 285:
-                lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
         return lineitem_height, counter
+    # def draw_lineitems(c, item_list, lineitem_height, counter):
+    #     if counter != 1:
+    #         lineitem_height += 17  # extra space between sections
+    #         counter += 1
+    #     for lineitem in item_list:
+    #         if counter < 28:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter == 28:
+    #             c.showPage()
+    #             draw_header(c, 2)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter < 71:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter == 71:
+    #             c.showPage()
+    #             draw_header(c, 3)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter < 114:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+    #         elif counter == 114:
+    #             c.showPage()
+    #             draw_header(c, 4)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+    #         elif counter < 157:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter == 157:
+    #             c.showPage()
+    #             draw_header(c, 5)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+    #         elif counter < 200:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter == 200:
+    #             c.showPage()
+    #             draw_header(c, 6)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+    #         elif counter == 200:
+    #             c.showPage()
+    #             draw_header(c, 6)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter < 243:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter == 243:
+    #             c.showPage()
+    #             draw_header(c, 7)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+    #         elif counter < 285:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter == 285:
+    #             c.showPage()
+    #             draw_header(c, 8)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter == 285:
+    #             c.showPage()
+    #             draw_header(c, 8)
+
+    #             c.setFont("Calibri", 11)
+    #             lineitem_height = 47
+
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+    #         elif counter < 285:
+    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
+
+    #     return lineitem_height, counter
     
     # make font smaller and not bold
     c.setFont("Calibri", 11)
