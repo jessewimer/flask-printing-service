@@ -1,8 +1,7 @@
-from flask import Flask, request, jsonify #, send_file
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from barcode import Code128
 from barcode.writer import ImageWriter
-# import win32print
 import win32ui
 from win32con import FW_NORMAL, FW_BOLD, DEFAULT_CHARSET
 from PIL import Image, ImageWin
@@ -11,7 +10,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-# from reportlab.lib.pagesizes import LETTER
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Paragraph, Spacer
 import subprocess
 from reportlab.lib.pagesizes import letter
@@ -19,7 +17,6 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 import textwrap
 from datetime import datetime
-# import math
 from reportlab.lib.enums import TA_CENTER
 import tempfile
 
@@ -39,13 +36,12 @@ SHEET_PRINTER = "RICOH P 501"
 ROLLO_PRINTER = "Rollo Printer (Copy 1)"
 CURRENT_USER = os.getlogin()
 SUMATRA_PATH = r"C:\Users\seedy\AppData\Local\SumatraPDF\SumatraPDF.exe"
-# Page limits for packing slips
-FIRST_PAGE_LIMIT = 27       # max rows (incl. blanks) on page 1
-OTHER_PAGE_LIMIT = 40       # max rows (incl. blanks) on subsequent pages
+
 
 @app.route('/health', methods=['GET'])
 def health_check():
     return {'status': 'ok'}, 200
+
 
 def create_font(name, size, bold=False, italic=False):
     weight = FW_BOLD if bold else FW_NORMAL
@@ -56,6 +52,7 @@ def create_font(name, size, bold=False, italic=False):
         "italic": italic,
         "charset": DEFAULT_CHARSET,
     })
+
 
 def format_variety_name_with_quotes(variety_name):
        """
@@ -69,6 +66,7 @@ def format_variety_name_with_quotes(variety_name):
            return f"{quoted_part} ({parts[1]}"
        else:
            return f"'{variety_name}'"
+
 
 @app.route('/print-germ-label', methods=['POST'])
 def print_germ_label():
@@ -192,7 +190,6 @@ def print_single_front_label_logic(data):
             return {'success': True, 'message': f'Front Single Label printed successfully ({quantity} copies)'}
         else:
             # Gather label content (shared across copies)
-            # variety_name = f"'{data.get('variety_name')}'"
             variety_name = format_variety_name_with_quotes(data.get('variety_name'))
            
             # Check for common_name first, fall back to crop if empty
@@ -501,8 +498,7 @@ def print_sheet_front_logic(data):
             print("================================")
             return {'success': True, 'message': f'Front Sheet Label printed successfully ({quantity} copies)'}
         else:
-            # Gather label content (shared across copies) - same as single label logic
-            # variety_name = f"'{data.get('variety_name')}'"
+            
             variety_name = format_variety_name_with_quotes(data.get('variety_name'))
             
             # Check for common_name first, fall back to crop if empty
@@ -983,7 +979,6 @@ def print_items_to_pull():
         }), 500
 
 
-
 def create_pull_items_pdf(file_path, items, batch_date):
     """Create a PDF with items to pull table - black and white version"""
     doc = SimpleDocTemplate(file_path, pagesize=letter)
@@ -1019,14 +1014,7 @@ def create_pull_items_pdf(file_path, items, batch_date):
     
     # Black and white table style
     table.setStyle(TableStyle([
-        # # Header row - bold and larger font
-        # ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        # ('FONTSIZE', (0, 0), (-1, 0), 12),
-        
-        # # Data rows - regular font
-        # ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        # ('FONTSIZE', (0, 1), (-1, -1), 10),
-            # Header row - bold and larger font
+        # Header row - bold and larger font
         ('FONTNAME', (0, 0), (-1, 0), 'Calibri-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         
@@ -1050,15 +1038,8 @@ def create_pull_items_pdf(file_path, items, batch_date):
     
     story.append(table)
     
-    # Footer
-    # story.append(Spacer(1, 20))
-    # footer_text = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    # footer = Paragraph(footer_text, styles['Normal'])
-    # story.append(footer)
-    
     doc.build(story)
     print(f"PDF created: {file_path}")
-
 
 
 @app.route('/generate-packing-slip', methods=['POST'])
@@ -1087,7 +1068,6 @@ def generate_packing_slip():
     except Exception as e:
         print(f"Error generating packing slip PDF: {e}")
         return jsonify({'success': False, 'error': str(e)})
-
 
 
 @app.route('/reprocess-order', methods=['POST', 'OPTIONS'])
@@ -1177,30 +1157,16 @@ def generate_pdf(order_number, order, action):
     # packets, bulk, and misc
     elif sorted_pkt_list and sorted_bulk_list and sorted_misc_list:
         num_items = len(sorted_pkt_list) + len(sorted_bulk_list) + len(sorted_misc_list) + 2
-    
-    # if num_items <= 27:
-    #     num_pages = 1
-    # elif num_items <=  70:
-    #     num_pages = 2
-    # elif num_items <=  113:  
-    #     num_pages = 3
-    # elif num_items <=  156:
-    #     num_pages = 4
-    # elif num_items <=  199:
-    #     num_pages = 5
-    # else:
-    #      num_pages = 6
-
         
-    if num_items <= 28:  # Changed from 27
+    if num_items <= 28:
         num_pages = 1
-    elif num_items <= 72:  # Changed from 70 
+    elif num_items <= 72: 
         num_pages = 2
-    elif num_items <= 116:  # Changed from 113
+    elif num_items <= 116:
         num_pages = 3
-    elif num_items <= 160:  # Changed from 156
+    elif num_items <= 160:
         num_pages = 4
-    elif num_items <= 205:  # Changed from 199
+    elif num_items <= 205:
         num_pages = 5
     elif num_items <= 248:
         num_pages = 6
@@ -1816,6 +1782,7 @@ def print_envelope_table():
             'error': f'Server error: {str(e)}'
         }), 500
 
+
 def print_console_table(envelope_data_by_year, years, grand_total, report_title):
     """
     Print a nicely formatted table to the console for ndefe user
@@ -1875,6 +1842,7 @@ def print_console_table(envelope_data_by_year, years, grand_total, report_title)
     print(f"{grand_total:>{total_width},}")
     print("="*80)
     print()
+
 
 def create_and_print_pdf(envelope_data_by_year, years, grand_total, envelope_types, report_title):
     """
@@ -2025,8 +1993,6 @@ def create_and_print_pdf(envelope_data_by_year, years, grand_total, envelope_typ
                 print(f"Warning: Could not delete temporary file {file_path}: {e}")
 
 
-
-
 @app.route('/print-address-labels', methods=['POST'])
 def print_address_labels():
     """
@@ -2084,7 +2050,6 @@ def print_address_labels():
             'success': False,
             'error': f'Server error: {str(e)}'
         }), 500
-
 
 
 @app.route('/print-stock-seed-label', methods=['POST'])
@@ -2191,7 +2156,6 @@ def print_stock_seed_label():
     except Exception as e:
         print(f"Error processing stock seed label request: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/print-pick-list', methods=['POST'])
@@ -2313,10 +2277,6 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     has_photos = any(item.get('has_photo', False) for item in items)
     
     # Build table data
-    # headers = ["Seed", "Qty", "Variety", "Crop"]
-    # if has_photos:
-    #     headers.insert(1, "Photo")
-    # Build table data
     headers = ["Photo", "Seed", "Qty", "Variety", "Crop"]  # Swapped Photo and Seed
     if not has_photos:
         headers = ["Seed", "Qty", "Variety", "Crop"]  # When no photos, only show Seed
@@ -2335,18 +2295,6 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
         row.append(item.get('crop', 'Unknown'))
         
         data.append(row)
-    # for item in items:
-    #     row = [""]  # Seed checkbox column
-        
-    #     if has_photos:
-    #         # Show checkmark if photo is NOT needed, empty if photo IS needed
-    #         row.append("✓" if not item.get('has_photo', False) else "")
-        
-    #     row.append(str(item.get('quantity', 0)))
-    #     row.append(item.get('variety_name', 'Unknown'))
-    #     row.append(item.get('crop', 'Unknown'))
-        
-    #     data.append(row)
     
     # Table column widths
     if has_photos:
@@ -2357,16 +2305,6 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     # Create the table
     table = Table(data, colWidths=col_widths, repeatRows=1, hAlign='LEFT')
     
-    # # Table style
-    # style = TableStyle([
-    #     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-    #     ('FONTSIZE', (0, 0), (-1, -1), 11),
-    #     ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-    #     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-    #     ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Center seed checkbox column
-    #     ('ALIGN', (1 if not has_photos else 2, 0), (1 if not has_photos else 2, -1), 'CENTER'),  # Center Qty column
-    #     ('GRID', (0, 0), (-1, -1), 0.25, colors.grey)
-    # ])
     # Table style
     style = TableStyle([
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -2398,7 +2336,6 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     # Build the PDF
     doc.build(elements)
     print(f"Pick list PDF created: {filepath}")
-
 
 
 @app.route('/print-store-order-invoice', methods=['POST'])
@@ -2507,7 +2444,6 @@ def generate_store_invoice_pdf(order, store, items):
     else:
         num_pages = 8
 
-
     # print("\n=== VARIETY NAMES DEBUG ===")
     # for item in items:
     #     variety = item.get('variety_name', 'Unknown')
@@ -2536,15 +2472,7 @@ def generate_store_invoice_pdf(order, store, items):
     
     # Create table with adjusted column widths
     table = Table(data, colWidths=[40, 193, 135, 70, 70], repeatRows=1, hAlign='LEFT')
-    # table.setStyle(TableStyle([
-    #     ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-    #     ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-    #     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-    #     ("ALIGN", (0, 0), (0, -1), "CENTER"),
-    #     ("ALIGN", (1, 1), (2, -1), "LEFT"),
-    #     ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
-    #     ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-    # ]))
+
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
@@ -2757,8 +2685,6 @@ def generate_store_invoice_pdf(order, store, items):
             traceback.print_exc()
     else:
         print(f"{store.get('store_name')}_{order_number}.pdf saved in store_invoices/ dir")
-
-
 
 
 def print_order_label(order_text, store_text, font_size_order=56, font_size_store=48, y_start=20):
