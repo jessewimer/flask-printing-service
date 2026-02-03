@@ -2243,14 +2243,21 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     header_style = ParagraphStyle(
         name="HeaderBigBold",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName="Calibri-Bold",  # Changed from Helvetica-Bold
         fontSize=16,
         spaceAfter=6,
     )
     
+    # small_right = ParagraphStyle(
+    #     name="RightSmall",
+    #     parent=styles["Normal"],
+    #     fontSize=12,
+    #     alignment=TA_RIGHT,
+    # )
     small_right = ParagraphStyle(
         name="RightSmall",
         parent=styles["Normal"],
+        fontName="Calibri",  # Add this line
         fontSize=12,
         alignment=TA_RIGHT,
     )
@@ -2306,8 +2313,17 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     table = Table(data, colWidths=col_widths, repeatRows=1, hAlign='LEFT')
     
     # Table style
+    # style = TableStyle([
+    #     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+    #     ('FONTSIZE', (0, 0), (-1, -1), 11),
+    #     ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+    #     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+    #     ('GRID', (0, 0), (-1, -1), 0.25, colors.grey)
+    # ])
+    # Table style
     style = TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Calibri-Bold'),  # Changed from Helvetica-Bold
+        ('FONTNAME', (0, 1), (-1, -1), 'Calibri'),      # Add this line for table body
         ('FONTSIZE', (0, 0), (-1, -1), 11),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
