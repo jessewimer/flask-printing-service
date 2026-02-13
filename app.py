@@ -1200,7 +1200,7 @@ def generate_pdf(order_number, order, action):
         packing_line1 = "We strive to use 100% reused and"
         packing_line2 = "recycled materials for our packaging."
         packing_line3 = "It may not always be pretty,"
-        packing_line4 = "but it's what inside that counts!"
+        packing_line4 = "but it's what's inside that counts!"
         
         c.drawString(460, height - 113, packing_line1)
         c.drawString(460, height - 123, packing_line2)
