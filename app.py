@@ -1192,7 +1192,21 @@ def generate_pdf(order_number, order, action):
 
     c.setFont("Calibri-Bold", 10)
     c.drawString(460, height - 100, f"100% USDA Certified Organic")
-    
+
+    # Add packing materials note if no order note exists
+    if not note:
+        c.setFont("Calibri-Italic", 9)
+        # Center these lines with the "100% USDA Certified Organic" text
+        packing_line1 = "We strive to use 100% reused and"
+        packing_line2 = "recycled materials for our packaging."
+        packing_line3 = "It may not always be pretty,"
+        packing_line4 = "but it's what inside that counts!"
+        
+        c.drawString(460, height - 113, packing_line1)
+        c.drawString(460, height - 123, packing_line2)
+        c.drawString(460, height - 133, packing_line3)
+        c.drawString(460, height - 143, packing_line4)
+        
     c.setFont("Calibri", 12)
 
     def draw_header(c, page_num):
@@ -1459,106 +1473,6 @@ def generate_pdf(order_number, order, action):
             elif counter <= 336:
                 lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
         return lineitem_height, counter
-    # def draw_lineitems(c, item_list, lineitem_height, counter):
-    #     if counter != 1:
-    #         lineitem_height += 17  # extra space between sections
-    #         counter += 1
-    #     for lineitem in item_list:
-    #         if counter < 28:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter == 28:
-    #             c.showPage()
-    #             draw_header(c, 2)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter < 71:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter == 71:
-    #             c.showPage()
-    #             draw_header(c, 3)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter < 114:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-    #         elif counter == 114:
-    #             c.showPage()
-    #             draw_header(c, 4)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-    #         elif counter < 157:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter == 157:
-    #             c.showPage()
-    #             draw_header(c, 5)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-    #         elif counter < 200:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter == 200:
-    #             c.showPage()
-    #             draw_header(c, 6)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-    #         elif counter == 200:
-    #             c.showPage()
-    #             draw_header(c, 6)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter < 243:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter == 243:
-    #             c.showPage()
-    #             draw_header(c, 7)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-    #         elif counter < 285:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter == 285:
-    #             c.showPage()
-    #             draw_header(c, 8)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter == 285:
-    #             c.showPage()
-    #             draw_header(c, 8)
-
-    #             c.setFont("Calibri", 11)
-    #             lineitem_height = 47
-
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-    #         elif counter < 285:
-    #             lineitem_height, counter = draw_lineitem(c, lineitem, lineitem_height, counter)
-
-    #     return lineitem_height, counter
     
     # make font smaller and not bold
     c.setFont("Calibri", 11)
@@ -2312,14 +2226,6 @@ def generate_pick_list_pdf(filepath, order_number, store_name, items):
     # Create the table
     table = Table(data, colWidths=col_widths, repeatRows=1, hAlign='LEFT')
     
-    # Table style
-    # style = TableStyle([
-    #     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-    #     ('FONTSIZE', (0, 0), (-1, -1), 11),
-    #     ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-    #     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-    #     ('GRID', (0, 0), (-1, -1), 0.25, colors.grey)
-    # ])
     # Table style
     style = TableStyle([
         ('FONTNAME', (0, 0), (-1, 0), 'Calibri-Bold'),  # Changed from Helvetica-Bold
