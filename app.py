@@ -1469,11 +1469,16 @@ def generate_pdf(order_number, order, action):
         return lineitem_height, counter
     
 
-    footer_line_y = height - 752
+    # footer_line_y = height - 752
+    # c.line(0, footer_line_y, width, footer_line_y)
+    # c.setFont("Calibri-Italic", 9)
+    # c.drawCentredString(width / 2, footer_line_y - 13, "We strive to use 100% reused and recycled materials for our packaging.")
+    # c.drawCentredString(width / 2, footer_line_y - 23, "It may not always be pretty, but it's what's inside that counts!")
+    footer_line_y = height - 755
     c.line(0, footer_line_y, width, footer_line_y)
     c.setFont("Calibri-Italic", 9)
-    c.drawCentredString(width / 2, footer_line_y - 13, "We strive to use 100% reused and recycled materials for our packaging.")
-    c.drawCentredString(width / 2, footer_line_y - 23, "It may not always be pretty, but it's what's inside that counts!")
+    c.drawCentredString(width / 2, footer_line_y - 11, "We strive to use 100% reused and recycled materials for our packaging.")
+    c.drawCentredString(width / 2, footer_line_y - 21, "It may not always be pretty, but it's what's inside that counts!")
 
     # make font smaller and not bold
     c.setFont("Calibri", 11)
