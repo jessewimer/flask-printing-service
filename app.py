@@ -2151,7 +2151,7 @@ def print_pick_list():
 
 def generate_pick_list_pdf(filepath, order_number, store_name, items):
     print("====== ITEMS TO PRINT ======")
-    print(items)
+    # print(items)
     """
     Generate a pick list PDF using ReportLab Platypus
     """
