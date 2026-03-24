@@ -20,6 +20,15 @@ from datetime import datetime
 from reportlab.lib.enums import TA_CENTER
 import tempfile
 
+import logging
+import traceback
+
+logging.basicConfig(
+    filename='flask_errors.log',
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(message)s'
+)
+
 pdfmetrics.registerFont(TTFont('Calibri', 'C:/Windows/Fonts/calibri.ttf')) 
 pdfmetrics.registerFont(TTFont("Calibri-Bold", 'C:/Windows/Fonts/calibrib.ttf'))
 pdfmetrics.registerFont(TTFont("Calibri-Italic", 'C:/Windows/Fonts/calibrii.ttf'))
@@ -2131,6 +2140,8 @@ def print_pick_list():
                     print(f"Temporary file {filename} deleted.")
         
     except Exception as e:
+        logging.error(f"Error printing pick list: {str(e)}")
+        logging.error(traceback.format_exc())   # <-- add this
         print(f"Error printing pick list: {str(e)}")
         return jsonify({
             'success': False,
