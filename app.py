@@ -275,7 +275,7 @@ def print_single_front_label_logic(data):
                         dc.TextOut(x_center - dc.GetTextExtent(days_year)[0] // 2, y_start, days_year)
                     else:  # 3 description lines
                         dc.SelectObject(bold_12)
-                        dc.TextOut(x_center - dc.GetTextExtent(variety_name)[0] // 2, y_start, variety_crop)
+                        dc.TextOut(x_center - dc.GetTextExtent(variety_crop)[0] // 2, y_start, variety_crop)
                         y_start += 55
 
                         dc.SelectObject(italic_9)
