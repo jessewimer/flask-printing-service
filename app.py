@@ -1081,41 +1081,117 @@ def generate_packing_slip():
 
 @app.route('/reprocess-order', methods=['POST', 'OPTIONS'])
 def reprocess_order():
+    """
+    Re-generate and print the packing slip for an order, and - if the
+    order has bulk items that still need printing - print their front
+    (and back, where the product's print_back is set) labels too. Used
+    from the Process Online Orders page's "Reprocess Order" action.
+    """
     if request.method == 'OPTIONS':
         return '', 200
-    
+
     try:
         print("Reprocessing order in Flask...")
         data = request.get_json()
         order = data.get('order')
         bulk_to_print = data.get('bulk_to_print', {})
-        
-    
+
         if not order:
             return jsonify({'success': False, 'error': 'No order data provided'})
-        
-        order_number = order.get('order_number', 'unknown')
-        
-        # Generate and print the packing slip
-        generate_pdf(order_number, order, action="print")
-        
 
-        # TODO: Process bulk_to_print items here if needed
-        # by calling print_single_front_label_logic, and print_single_back_label_logic (if back lines exist)
+        order_number = order.get('order_number', 'unknown')
+
+        # Packing slip first, isolated in its own try/except so a bulk-label
+        # failure below can never be mistaken for (or mask) a packing slip
+        # failure, and vice versa.
+        try:
+            generate_pdf(order_number, order, action="print")
+        except Exception as e:
+            print(f"Error generating packing slip for {order_number}: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Packing slip failed to print: {e}'
+            })
+
+        # Bulk labels: front always, back only when the product's
+        # print_back is set - not based on whether any back line text
+        # happens to be non-empty. The Django payload doesn't include
+        # sku_suffix, so derive it from the dict key the same way
+        # /print-range does - without it, print_single_front_label_logic's
+        # "pkt" in sku_suffix check blows up on None and (previously) that
+        # failure went unnoticed since nothing checked its return value.
+        failed_items = []
+
         for sku, item in bulk_to_print.items():
-            print_single_front_label_logic(item)
-            if item.get('back1'):  # Assuming back1 is mandatory for back label
-                print_single_back_label_logic(item)
-        
-        
+            item['sku_suffix'] = sku.split('-')[-1]
+
+            front_result = print_single_front_label_logic(item)
+            if not front_result.get('success'):
+                print(f"Front label failed for {sku}: {front_result.get('error')}")
+                failed_items.append(f"{sku} (front): {front_result.get('error')}")
+
+            if item.get('print_back'):
+                back_result = print_single_back_label_logic(item)
+                if not back_result.get('success'):
+                    print(f"Back label failed for {sku}: {back_result.get('error')}")
+                    failed_items.append(f"{sku} (back): {back_result.get('error')}")
+
+        if failed_items:
+            return jsonify({
+                'success': True,
+                'message': (
+                    f'Order {order_number} reprocessed, but {len(failed_items)} '
+                    f'bulk label(s) failed to print: ' + '; '.join(failed_items)
+                )
+            })
+
         return jsonify({
             'success': True,
             'message': f'Order {order_number} reprocessed and sent to printer'
         })
-       
+
     except Exception as e:
         print(f"Error reprocessing order: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+
+# @app.route('/reprocess-order', methods=['POST', 'OPTIONS'])
+# def reprocess_order():
+#     if request.method == 'OPTIONS':
+#         return '', 200
+    
+#     try:
+#         print("Reprocessing order in Flask...")
+#         data = request.get_json()
+#         order = data.get('order')
+#         bulk_to_print = data.get('bulk_to_print', {})
+        
+    
+#         if not order:
+#             return jsonify({'success': False, 'error': 'No order data provided'})
+        
+#         order_number = order.get('order_number', 'unknown')
+        
+#         # Generate and print the packing slip
+#         generate_pdf(order_number, order, action="print")
+        
+
+#         # TODO: Process bulk_to_print items here if needed
+#         # by calling print_single_front_label_logic, and print_single_back_label_logic (if back lines exist)
+#         for sku, item in bulk_to_print.items():
+#             print_single_front_label_logic(item)
+#             if item.get('back1'):  # Assuming back1 is mandatory for back label
+#                 print_single_back_label_logic(item)
+        
+        
+#         return jsonify({
+#             'success': True,
+#             'message': f'Order {order_number} reprocessed and sent to printer'
+#         })
+       
+#     except Exception as e:
+#         print(f"Error reprocessing order: {e}")
+#         return jsonify({'success': False, 'error': str(e)})
     
 
 
