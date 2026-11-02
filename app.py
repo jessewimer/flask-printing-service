@@ -562,9 +562,16 @@ def print_sheet_front_logic(data):
 
 
 
-                # To adjust the starting postition of the first row, change the dpi multiplier below
-                # Increasing the multiplier moves the labels down, decreasing moves them up
-                margin_y = int(0.41 * dpi)  # 0.5 inch top margin
+                # Starting position of the first row, in inches - the base
+                # value plus a small nudge from System Settings (Label
+                # Print Calibration) that compensates for the printer's
+                # paper feed drifting slightly batch to batch, without
+                # needing a code change here each time it does.
+                try:
+                    y_offset = float(data.get('front_sheet_y_offset') or 0)
+                except (TypeError, ValueError):
+                    y_offset = 0
+                margin_y = int((0.41 + y_offset) * dpi)  # 0.41 inch top margin + offset
                 
                 
                 
@@ -771,7 +778,15 @@ def print_sheet_back_logic(data):
                 page_height = dc.GetDeviceCaps(10)
 
                 # Sheet layout: 3 columns x 10 rows = 30 labels
-                margin_y = int(0.5 * dpi)
+                # Base top margin plus a small nudge from System Settings
+                # (Label Print Calibration) - same reasoning as the front
+                # sheet's own offset above, printed as a separate job so
+                # it can drift independently.
+                try:
+                    y_offset = float(data.get('back_sheet_y_offset') or 0)
+                except (TypeError, ValueError):
+                    y_offset = 0
+                margin_y = int((0.5 + y_offset) * dpi)
                 label_width = page_width // 3
                 label_height = (page_height - margin_y) // 10 - 7
                 
